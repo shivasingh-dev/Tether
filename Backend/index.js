@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/database.js";
 import { AuthRoute } from "./routes/authRoute.js";
 import { updateProfileRoute } from "./routes/updateProfileRoute.js";
+import { chatRouter } from "./routes/chatRoute.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ connectDB();
 // Routes
 app.use('/api/auth', AuthRoute);  
 app.use('/api/update', updateProfileRoute)
+app.use('/api/chat', chatRouter)
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

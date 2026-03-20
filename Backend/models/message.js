@@ -14,17 +14,14 @@ const messageSchema = new mongoose.Schema({
   },
   content: { type: String },
   imageOrVideoUrl: { type: String },
-  contentType: {type: String, enum: ['image', 'text', 'video']},
+  contentType: { type: String, enum: ['image', 'text', 'video'] },
   reactions: [
-      {
-        user: {type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        emoji: String
-      }
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      emoji: String
+    }
   ],
-  messageStatus: {type: String, default: 'send'}
-}, {timestamps: true});
+  messageStatus: { type: String, default: 'send' }
+}, { timestamps: true });
 
-const message = mongoose.model('message', messageSchema)
-
-export default message
-  
+export const messageModel = mongoose.model('Message', messageSchema)
