@@ -1,6 +1,6 @@
 import userModel from "../models/user.js";
 import { otpGenerator } from "../utils/otpGenerater.js";
-import {sendVerificationCodeEmail, sendWelcomeEmail} from '../services/emailSend.js'
+import {sendVerificationCodeEmail, sendWelcomeEmail} from '../services/emailService.js'
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 

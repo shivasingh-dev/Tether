@@ -75,6 +75,17 @@ export const sendMessagge = async (req, res) => {
       .populate("sender", "fullName profilePicture")
       .populate("reciever", "fullName profilePicture");
 
+    // emit socket event for realtime
+    if (req.io && req.socketUserMap) {
+      const receiverSocketId = req.socketUserMap.get(recieverId)
+      if (receiverSocketId) {
+        req.io.to(receiverSocketId).emit("receive_message", populateMessage)
+        message.messageStatus = "delivered"
+        await message.save()
+      }
+    }
+
+
     return res.status(200).json({
       success: true,
       message: "Message sent successfully",
@@ -101,7 +112,7 @@ export const getConversation = async (req, res) => {
         populate: {
           path: "sender reciever",
           select: "userName profilePicture",
-        },  
+        },
       })
       .sort({ upadtedAt: -1 });
 
@@ -181,6 +192,21 @@ export const markAsRead = async (req, res) => {
       { $set: { messageStatus: "read" } },
     );
 
+    // emit socket event for notify to original sender
+    if (req.io && req.socketUserMap) {
+      for (const message of messages) {
+        const senderSocketId = req.socketUserMap.get(message?.sender?.toString())
+        if (senderSocketId) {
+          const updatedMessage = {
+            _id: message._id,
+            messageStatus: "read",
+          }
+          req.io.to(senderSocketId).emit("message_read", updatedMessage)
+          await message.save()
+        }
+      }
+    }
+
     return res
       .status(200)
       .json({
@@ -216,6 +242,15 @@ export const deleteMessage = async (req, res) => {
         });
     }
     await messageModel.findByIdAndDelete(messageId);
+
+    // emit socket event
+
+    if (req.io && req.socketUserMap) {
+      const receiverSocketId = req.socketUserMap.get(message?.reciever?.toString())
+      if (receiverSocketId) {
+        req.io.to(receiverSocketId).emit("message_deleted", messageId)
+      }
+    }
 
     return res
       .status(200)

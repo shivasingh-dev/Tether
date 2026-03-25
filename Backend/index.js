@@ -3,15 +3,31 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/database.js";
+import { initializeSocket } from "./services/socketService.js";
+import http from 'http'
+
+// router import
+import { statusRouter } from "./routes/statusRoute.js";
 import { AuthRoute } from "./routes/authRoute.js";
 import { updateProfileRoute } from "./routes/updateProfileRoute.js";
 import { chatRouter } from "./routes/chatRoute.js";
 
+// env configuration
+
 dotenv.config();
 
+// app configuration
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+const corsOption = {
+  origin: process.env.FRONTENDURL,
+  credentials: true
+}
+
+// Database
+connectDB();
 
 // Middleware
 app.use(express.json());           
@@ -22,16 +38,29 @@ app.use(cookieParser());
 //   origin: process.env.CLIENT_URL || "http://localhost:3000",
 //   credentials: true,
 // }));
-app.use(cors())  // for testing in development
+app.use(cors(corsOption))  // for testing in development
 
-// Database
-connectDB();
+
+// create server
+
+const server = http.createServer(app)
+
+const io = initializeSocket(server)
+
+// apply socket  middleware before routes
+app.use((req, res, next) => {
+  req.io = io
+  req.socketUserMap = io.socketUserMap
+  next()
+})
+
 
 // Routes
 app.use('/api/auth', AuthRoute);  
 app.use('/api/update', updateProfileRoute)
 app.use('/api/chat', chatRouter)
+app.use('/api/status', statusRouter)
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
