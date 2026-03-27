@@ -35,6 +35,10 @@ local.properties
 !debug.keystore
 .kotlin/
 
+# Environment Variables
+.env
+.env.*
+
 # node.js
 #
 node_modules/

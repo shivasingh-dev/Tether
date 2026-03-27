@@ -52,14 +52,14 @@ export const checkAuthenticated = async (req, res) => {
   try {
     const userId = req.userId;
     if (!userId) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Unauthorised, please login first to access our app",
       });
     }
     const user = await userModel.findById(userId);
     if (!user) {
-      return res.status(400).json({ success: false, message: "No user found" });
+      return res.status(400).json({ success: false, message: "User not found" });
     }
     return res
       .status(200)

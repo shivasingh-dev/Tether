@@ -6,16 +6,16 @@ import {sendPhoneOtpfun} from "../utils/phoneNumberOtp.js";
 
 export const sendPhoneOtp = async (req, res) => {
   try {
-    const { phoneNumber, fullName } = req.body;
+    const { phoneNum, fullName } = req.body;
 
-    if (!phoneNumber || !fullName) {
+    if (!phoneNum || !fullName) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
       });
     }
 
-    const existUser = await userModel.findOne({ phoneNumber });
+    const existUser = await userModel.findOne({ phoneNum });
 
     const verificationCode = otpGenerator();
     console.log(verificationCode)
@@ -34,7 +34,7 @@ export const sendPhoneOtp = async (req, res) => {
       existUser.phoneOtp = verificationCode;
       existUser.createdAt = Date.now();
       await existUser.save();
-      await sendPhoneOtpfun(phoneNumber, verificationCode);
+      await sendPhoneOtpfun(phoneNum, verificationCode);
 
       return res.status(200).json({
         success: true,
@@ -45,7 +45,7 @@ export const sendPhoneOtp = async (req, res) => {
     // for new user
     const user = new userModel({
       fullName,
-      phoneNumber,
+      phoneNum,
       phoneOtp: verificationCode,
     });
     await user.save();
@@ -54,6 +54,7 @@ export const sendPhoneOtp = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
+      data: user,
     });
   } catch (error) {
     console.log("Error in sendOtp:", error);
@@ -85,7 +86,7 @@ export const verifyPhoneOtp = async (req, res) => {
     await user.save();
     return res
       .status(200)
-      .json({ success: true, message: "Phone Number Verified" });
+      .json({ success: true, message: "Phone Number Verified", data: user });
   } catch (error) {
     console.log("Error in verify phone otp function", error);
     return res
