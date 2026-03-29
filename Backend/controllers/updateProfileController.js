@@ -76,6 +76,46 @@ export const checkAuthenticated = async (req, res) => {
   }
 };
 
+// this function is return all user on the basis of saved phone numbers
+
+export const getAllUserWithContacts = async (req, res) => {
+  try {
+    const { phoneNumbers } = req.body
+    const userId = req.userId
+
+    if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+      return res.status(400).json({ success: false, message: "Phone numbers required" })
+    }
+
+    // Sirf valid 10-digit numbers
+    const validNumbers = phoneNumbers.filter(n => /^\d{10}$/.test(n))
+
+    // Jo Tether pe registered hain unhe dhundo
+    const registeredContacts = await userModel.find(
+      { phoneNumber: { $in: validNumbers }, _id: { $ne: userId } },
+      { _id: 1, fullName: 1, phoneNumber: 1, profilePicture: 1, about: 1 }
+    )
+
+    // Matched users ko savedContacts mein save karo
+    const contactIds = registeredContacts.map(c => c._id)
+    await userModel.findByIdAndUpdate(userId, {
+      $addToSet: { savedContacts: { $each: contactIds } }
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Contacts fetched successfully",
+      data: registeredContacts
+    })
+  } catch (error) {
+    console.error("Error in getContacts", error)
+    return res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
+
+
+// this function is returning all users from database without filtering on the basis of phone number
+
 export const getAllUser = async (req, res) => {
   const loggedInUser = req.userId;
   try {
