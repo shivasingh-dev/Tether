@@ -1,13 +1,21 @@
 import axios from 'axios'
-import dotenv from "dotenv";
 
-dotenv.config()
 
-const apiUrl = `${process.env.REACT_APP_BACKEND_URL}/api/`
+const apiUrl = `http://localhost:8000/api/`
+
 
 const axiosInstance = axios.create({
   baseURL: apiUrl,
   withCredentials: true,
 })
 
+axiosInstance.interceptors.request.use((config) => {
+  const user = useUserStore.getState().user;
+  if (user?.token) {
+    config.headers.Authorization = `Bearer ${user.token}`;
+  }
+  return config;
+});
+
 export default axiosInstance
+

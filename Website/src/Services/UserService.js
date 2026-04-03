@@ -1,39 +1,11 @@
-import axiosInstance from './UrlService'
+import axiosInstance from './UrlService.js'
 
-
-export const sendPhoneOtp = async (phoneNumber, fullName) => {
+export const loginWithEmail = async (email, password) => {
   try {
-    const response = await axiosInstance.post('/auth/get-phone-otp', { phoneNumber, fullName })
+    const response = await axiosInstance.post('/auth/email-login', {email, password})
     return response.data
   } catch (error) {
-    throw error?.response?.data || { message: error.message }
-  }
-}
-
-export const verifyPhoneOtp = async (phoneNum, phoneCode) => {
-  try {
-    const response = await axiosInstance.post('/auth/verify-phone-otp', { phoneNum, phoneCode })
-    return response.data
-  } catch (error) {
-    throw error?.response?.data || { message: error.message }
-  }
-}
-
-export const sendEmailOtp = async (email, password, phoneNum) => {
-  try {
-    const response = await axiosInstance.post('/auth/register-email', { email, password, phoneNum })
-    return response.data
-  } catch (error) {
-    throw error?.response?.data || { message: error.message }
-  }
-}
-
-export const verifyEmailOtp = async (email, otp) => {
-  try {
-    const response = await axiosInstance.post('/auth/verify-email', { email, otp })
-    return response.data
-  } catch (error) {
-    throw error?.response?.data || { message: error.message }
+    throw error?.response?.data || {message: error.message}
   }
 }
 

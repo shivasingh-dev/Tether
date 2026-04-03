@@ -1,6 +1,6 @@
 import userModel from "../models/user.js";
 import { otpGenerator } from "../utils/otpGenerater.js";
-import {sendVerificationCodeEmail, sendWelcomeEmail} from '../services/emailService.js'
+import { sendVerificationCodeEmail, sendWelcomeEmail } from '../services/emailService.js'
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -14,13 +14,13 @@ const createToken = (userId) => {
 
 export const registerEmail = async (req, res) => {
   try {
-    const { email, password, phoneNum } = req.body;
-    if (!email || !password || !phoneNum) {
+    const { email, password, phoneNumber } = req.body;
+    if (!email || !password || !phoneNumber) {
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
-    const existUser = await userModel.findOne({ phoneNumber: phoneNum });
+    const existUser = await userModel.findOne({ phoneNumber: phoneNumber });
 
     if (existUser) {
       // if user is verified
@@ -36,12 +36,12 @@ export const registerEmail = async (req, res) => {
         // phoneNum,
       });
 
-      if (emailExists) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Email Already in use" });
+      if (emailExists && emailExists.isVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already in use",
+        });
       }
-
       // hashing password
       const hashPassword = await bcrypt.hash(password, 10);
       const otp = otpGenerator();
@@ -69,6 +69,7 @@ export const registerEmail = async (req, res) => {
 
 export const verifyEmailOtp = async (req, res) => {
   try {
+
     const { email, otp } = req.body;
     if (!email || !otp) {
       return res
@@ -127,12 +128,28 @@ export const emailLogin = async (req, res) => {
     if (!isMatchUser) {
       return res
         .status(400)
-        .json({ success: false, message: "Invalid Cridentials" });
+        .json({ success: false, message: "Invalid Email Id or Password" });
     }
+
+    const userData = {
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      profilePicture: user.profilePicture || "",
+      about: user.about || "Hey there! I am using Tether",
+      isOnline: user.isOnline,
+    };
 
     const token = createToken(user._id)
     res.cookie("auth_token", token)
-    return res.status(200).json({ success: true, message: "User login successfully", Token: token });
+    return res.status(200).json({
+      success: true, message: "User login successfully",
+      user: {
+        ...userData,
+        token: token
+      }
+    });
   } catch (error) {
     console.error("Error in emailLogin", error);
     return res

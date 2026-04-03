@@ -1,22 +1,22 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 
 
-const useUserState = create(
+const useUserStore = create(
   persist(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      setUser: (userData) => set({ user: userData, isAuthenticated: true }),
+      setUser: (data) => set({ user: data, isAuthenticated: true }),
       clearUser: () => set({ user: null, isAuthenticated: false })
     }),
     {
-      name: "user-data-storage",
-      getStorage: () => localStorage
+      name: "user-auth-storage",
+      storage: createJSONStorage(() => localStorage),
     }
   )
 )
 
 
-export default useUserState
+export default useUserStore

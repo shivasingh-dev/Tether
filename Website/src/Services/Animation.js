@@ -9,3 +9,9 @@ export const slideDown = {
   animate: { y: 0, opacity: 1 },
   transition: { duration: 0.8, ease: "easeInOut" }
 };
+
+export const fadeIn = {
+  initial: {opacity: 0},
+  animate: {opacity: 1},
+  transition: {duration: 0.7, ease: "easeInOut"}
+}

@@ -5,7 +5,7 @@ import {  motion } from "motion/react"
 const Card = () => {
   return (
     <motion.div {...slideLeft}
-      className="relative w-full rounded-3xl overflow-hidden group shadow-[0_0_15px_rgba(0,255,128,0.4),0_0_40px_rgba(0,255,128,0.2),0_0_80px_rgba(0,255,128,0.1)]">
+      className="relative w-full rounded-3xl overflow-hidden group shadow-[0_0_15px_rgba(0,255,128,0.5),0_0_40px_rgba(0,255,128,0.2),0_0_80px_rgba(0,255,128,0.1)]">
 
       {/* Animated glowing border */}
       <div className="absolute inset-0 rounded-3xl p-[1.5px] z-0"

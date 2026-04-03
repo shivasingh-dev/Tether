@@ -6,16 +6,16 @@ import {sendPhoneOtpfun} from "../utils/phoneNumberOtp.js";
 
 export const sendPhoneOtp = async (req, res) => {
   try {
-    const { phoneNum, fullName } = req.body;
+    const { phoneNumber, fullName } = req.body;
 
-    if (!phoneNum || !fullName) {
+    if (!phoneNumber || !fullName) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
       });
     }
 
-    const existUser = await userModel.findOne({ phoneNum });
+    const existUser = await userModel.findOne({ phoneNumber });
 
     const verificationCode = otpGenerator();
     console.log(verificationCode)
@@ -25,7 +25,7 @@ export const sendPhoneOtp = async (req, res) => {
       if (existUser.isVerified) {
         return res.status(400).json({
           success: false,
-          message: "User already exists, please login with Gmail",
+          message: "User with this number already exists, please login with Email",
         });
       }
 
@@ -34,7 +34,7 @@ export const sendPhoneOtp = async (req, res) => {
       existUser.phoneOtp = verificationCode;
       existUser.createdAt = Date.now();
       await existUser.save();
-      await sendPhoneOtpfun(phoneNum, verificationCode);
+      await sendPhoneOtpfun(phoneNumber, verificationCode);
 
       return res.status(200).json({
         success: true,
@@ -45,7 +45,7 @@ export const sendPhoneOtp = async (req, res) => {
     // for new user
     const user = new userModel({
       fullName,
-      phoneNum,
+      phoneNumber,
       phoneOtp: verificationCode,
     });
     await user.save();
@@ -69,15 +69,15 @@ export const sendPhoneOtp = async (req, res) => {
 
 export const verifyPhoneOtp = async (req, res) => {
   try {
-    const { phoneCode, phoneNum } = req.body;
-    if (!phoneCode || !phoneNum) {
+    const { phoneOtp, phoneNumber } = req.body;
+    if (!phoneOtp || !phoneNumber) {
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
     const user = await userModel.findOne({
-      phoneNumber: phoneNum,
-      phoneOtp: phoneCode,
+      phoneNumber: phoneNumber,
+      phoneOtp: phoneOtp,
     });
     if (!user) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });

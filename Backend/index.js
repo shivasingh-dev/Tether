@@ -21,10 +21,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// const corsOption = {
+//   origin: process.env.FRONTENDURL,
+//   credentials: true
+// }
+
 const corsOption = {
-  origin: process.env.FRONTENDURL,
-  credentials: true
-}
+  // Mobile testing ke liye '*' ya specific IP allow karna zaruri hai
+  origin: true, 
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
 
 // Database
 connectDB();
@@ -61,6 +69,6 @@ app.use('/api/update', updateProfileRoute)
 app.use('/api/chat', chatRouter)
 app.use('/api/status', statusRouter)
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
