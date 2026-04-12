@@ -1,5 +1,5 @@
 import React from 'react'
-import Logo from '../../public/ic_launcher.png'
+import Logo from '../../src/assets/ic_launcher.png'
 import { ArrowRight } from 'lucide-react'
 import { slideDown } from '../Services/Animation'
 import { motion } from "motion/react"

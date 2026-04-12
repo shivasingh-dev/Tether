@@ -4,18 +4,18 @@ import { uploadFileToCloudinary } from "../config/cloudinaryConfig.js";
 
 export const sendMessagge = async (req, res) => {
   try {
-    const { senderId, recieverId, content, messageStatus } = req.body;
+    const { senderId, receiverId, content, messageStatus } = req.body;
     const file = req.file;
 
-    const particpants = [senderId, recieverId].sort();
+    const participants = [senderId, receiverId].sort();
 
     let conversation = await conversationModel.findOne({
-      particpants: particpants,
+      participants: { $all: participants},
     });
 
     if (!conversation) {
       conversation = new conversationModel({
-        particpants,
+        participants,
       });
       await conversation.save();
     }
@@ -54,30 +54,31 @@ export const sendMessagge = async (req, res) => {
     const message = new messageModel({
       conversation: conversation?._id,
       sender: senderId,
-      reciever: recieverId,
+      receiver: receiverId,
       content,
-      contentType,
+      contentType: contentType || "text",
       imageOrVideoUrl,
-      messageStatus,
+      messageStatus: messageStatus || "sent",
     });
 
     await message.save();
 
     if (message?.content) {
-      conversation.lastMessage = message?.id;
+      conversation.lastMessage = message?._id;
     }
 
-    conversation.unreadCount += 1;
+    const currentCount = conversation.unreadCount.get(receiverId.toString()) || 0;
+    conversation.unreadCount.set(receiverId.toString(), currentCount + 1);
     await conversation.save();
 
     const populateMessage = await messageModel
       .findById(message?._id)
       .populate("sender", "fullName profilePicture")
-      .populate("reciever", "fullName profilePicture");
+      .populate("receiver", "fullName profilePicture");
 
     // emit socket event for realtime
     if (req.io && req.socketUserMap) {
-      const receiverSocketId = req.socketUserMap.get(recieverId)
+      const receiverSocketId = req.socketUserMap.get(receiverId)
       if (receiverSocketId) {
         req.io.to(receiverSocketId).emit("receive_message", populateMessage)
         message.messageStatus = "delivered"
@@ -102,11 +103,11 @@ export const sendMessagge = async (req, res) => {
 export const getConversation = async (req, res) => {
   const userId = req.userId;
   try {
-    let conversation = await conversationModel
+    const conversations = await conversationModel
       .find({
-        particpants: userId,
+        participants: userId,
       })
-      .populate("particpants", "fullName profilePicture isOnline lastSeen")
+      .populate("participants", "fullName profilePicture isOnline lastSeen")
       .populate({
         path: "lastMessage",
         populate: {
@@ -114,12 +115,12 @@ export const getConversation = async (req, res) => {
           select: "userName profilePicture",
         },
       })
-      .sort({ upadtedAt: -1 });
+      .sort({ updatedAt: -1 });
 
     return res.status(200).json({
       success: true,
       message: "conversation fetched successfully",
-      data: conversation,
+      data: conversations,
     });
   } catch (error) {
     console.error("Error in getConversation", error);
@@ -141,7 +142,7 @@ export const getMessages = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Conversation not found" });
     }
-    if (!conversation.particpants.includes(userId)) {
+    if (!conversation.participants.includes(userId)) {
       return res.status(404).json({
         success: false,
         message: "Not authorized to view this conversation",

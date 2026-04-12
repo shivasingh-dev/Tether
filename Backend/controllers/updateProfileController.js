@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { uploadFileToCloudinary } from "../config/cloudinaryConfig.js";
 import userModel from "../models/user.js";
 import { conversationModel } from "../models/conversation.js";
@@ -65,7 +66,7 @@ export const checkAuthenticated = async (req, res) => {
       .status(200)
       .json({
         success: true,
-        message: "User retrived and allowed to use whatsapp",
+        message: "User retrived and allowed to use Tether",
         data: user,
       });
   } catch (error) {
@@ -76,83 +77,118 @@ export const checkAuthenticated = async (req, res) => {
   }
 };
 
-// this function is return all user on the basis of saved phone numbers
+// this function is return all user on the basis of saved phone numbers for new chats
 
 export const getAllUserWithContacts = async (req, res) => {
   try {
-    const { phoneNumbers } = req.body
-    const userId = req.userId
+    const { phoneNumbers } = req.body;
+    const userId = req.userId;
 
     if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
-      return res.status(400).json({ success: false, message: "Phone numbers required" })
+      return res.status(400).json({ success: false, message: "Phone numbers required" });
     }
 
-    // Sirf valid 10-digit numbers
-    const validNumbers = phoneNumbers.filter(n => /^\d{10}$/.test(n))
+    // ✅ Frontend se cleaned numbers aa rahe hain, bas basic check
+    const validNumbers = phoneNumbers.filter(n => /^\d{10}$/.test(n));
 
-    // Jo Tether pe registered hain unhe dhundo
+    if (!validNumbers.length) {
+      return res.status(400).json({ success: false, message: "No valid numbers found" });
+    }
+
     const registeredContacts = await userModel.find(
       { phoneNumber: { $in: validNumbers }, _id: { $ne: userId } },
-      { _id: 1, fullName: 1, phoneNumber: 1, profilePicture: 1, about: 1 }
-    )
+      { _id: 1, fullName: 1, phoneNumber: 1, profilePicture: 1, about: 1, isOnline: 1 }
+    ).lean();
 
-    // Matched users ko savedContacts mein save karo
-    const contactIds = registeredContacts.map(c => c._id)
-    await userModel.findByIdAndUpdate(userId, {
-      $addToSet: { savedContacts: { $each: contactIds } }
-    })
+    // savedContacts update karo
+    const contactIds = registeredContacts.map(c => c._id);
+    if (contactIds.length) {
+      await userModel.findByIdAndUpdate(userId, {
+        $addToSet: { savedContacts: { $each: contactIds } }
+      });
+    }
 
     return res.status(200).json({
       success: true,
       message: "Contacts fetched successfully",
       data: registeredContacts
-    })
+    });
+
   } catch (error) {
-    console.error("Error in getContacts", error)
-    return res.status(500).json({ success: false, message: "Internal server error" })
+    console.error("Error in getAllUserWithContacts", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
-}
+};
 
+// this function is returning recent chats for users 
 
-// this function is returning all users from database without filtering on the basis of phone number
-
-export const getAllUser = async (req, res) => {
+export const getRecentChats = async (req, res) => {
   const loggedInUser = req.userId;
   try {
-    const users = await userModel
-      .find({ _id: { $ne: loggedInUser } })
-      .select("fullName profilePicture lastSeen isOnline about phoneNumber")
+
+    const loggedInUser = req.userId;
+
+    if (!loggedInUser) {
+      return res.status(401).json({ success: false, message: "User ID not found" });
+    }
+
+    // String ko ObjectId mein convert karna zaroori hai
+    const userObjectId = new mongoose.Types.ObjectId(loggedInUser);
+
+    // Sirf woh conversations jisme logged in user ho + lastMessage exist kare
+    const conversations = await conversationModel
+      .find({
+        participants: { $in: [userObjectId] },  // ✅ fixed typo
+        lastMessage: { $exists: true, $ne: null }
+      })
+      .populate({
+        path: "lastMessage",
+        select: "content contentType createdAt sender messageStatus",
+      })
+      .sort({ updatedAt: -1 })
       .lean();
 
-    const usersWithConversation = await Promise.all(
-      users.map(async (user) => {
-        const conversation = await conversationModel
-          .findOne({
-            particpants: { $all: [loggedInUser, user?._id] },
-          })
-          .populate({
-            path: "lastMessage",
-            select: "content createdAt sender receiver",
-          })
+    if (!conversations.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No recent chats",
+        data: []
+      });
+    }
+
+    // Dusre participant ki info + unread count nikalo
+    const recentChats = await Promise.all(
+      conversations.map(async (conv) => {
+        const otherUserId = conv.participants.find(
+          (p) => p.toString() !== loggedInUser.toString()
+        );
+
+        const otherUser = await userModel
+          .findById(otherUserId)
+          .select("fullName profilePicture lastSeen isOnline phoneNumber")
           .lean();
 
+        // Per-user unread count Map se nikalo
+        const unreadCount = conv.unreadCount?.[loggedInUser.toString()] || 0;
+
         return {
-          ...user,
-          conversation: conversation || null,
+          conversationId: conv._id,
+          user: otherUser,
+          lastMessage: conv.lastMessage,
+          unreadCount,
+          updatedAt: conv.updatedAt,
         };
-      }),
+      })
     );
-    return res
-      .status(200)
-      .json({
-        sucess: true,
-        message: "users retrived successfully",
-        data: usersWithConversation,
-      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Recent chats retrieved successfully",
+      data: recentChats,
+    });
+
   } catch (error) {
-    console.error("Error in getAllUser", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    console.error("Error in getRecentChats", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

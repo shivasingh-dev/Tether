@@ -4,7 +4,7 @@ import Card from '../../components/Card'
 import { motion } from "motion/react"
 import { slideLeft } from '../../Services/Animation'
 import { fadeIn } from '../../Services/Animation'
-import RightImage from '../../../public/Tether_Chat_Left_Image.png'
+import RightImage from '../../assets/Tether_Chat_Left_Image.png'
 import LoginPopup from '../../components/LoginPopup'
 
 const Welcome = () => {

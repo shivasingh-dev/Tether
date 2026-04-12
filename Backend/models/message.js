@@ -7,7 +7,7 @@ const messageSchema = new mongoose.Schema({
     required: true,
   },
   sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  reciever: {
+  receiver: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -21,7 +21,7 @@ const messageSchema = new mongoose.Schema({
       emoji: String
     }
   ],
-  messageStatus: { type: String, default: 'send' }
+  messageStatus: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' }
 }, { timestamps: true });
 
 export const messageModel = mongoose.model('Message', messageSchema)
