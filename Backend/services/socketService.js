@@ -161,13 +161,13 @@ export const initializeSocket = (server) => {
 
     socket.on(
       "add_reaction",
-      async ({ messageId, emoji, userId, reactionUserId }) => {
+      async ({ messageId, emoji, userId:reactionUserId }) => {
         try {
           const message = await messageModel.findById(messageId);
           if (!message) return;
 
-          const existingIndex = messageModel.findIndex(
-            (r) => r.user.toString() === userId,
+          const existingIndex = message.reactions.findIndex(
+            (r) => r.user.toString() === reactionUserId.toString(),
           );
 
           if (existingIndex > -1) {

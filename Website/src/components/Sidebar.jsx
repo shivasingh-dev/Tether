@@ -70,7 +70,7 @@ const Sidebar = () => {
           ? "fixed bottom-0 left-0 right-0 h-16 flex-row justify-around items-center px-6 border-t" 
           : "w-14.5 h-screen flex-col items-center py-8 border-r"} 
         ${theme === "dark" 
-          ? "bg-[#030b1e] border-blue-400/50" 
+          ? "bg-[#030b1e] border-blue-500/40" 
           : "bg-white border-gray-200"} 
         flex z-50 transition-all duration-500
       `}

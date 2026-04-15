@@ -111,7 +111,7 @@ export const getConversation = async (req, res) => {
       .populate({
         path: "lastMessage",
         populate: {
-          path: "sender reciever",
+          path: "sender receiver",
           select: "userName profilePicture",
         },
       })
@@ -136,7 +136,12 @@ export const getMessages = async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.userId;
   try {
-    const conversation = await conversationModel.findById(conversationId);
+    const conversation = await conversationModel.findByIdAndUpdate(conversationId, 
+      {
+        $set: {[`unreadCount.${userId}`]: 0}
+      },
+      {new: true}
+    );
     if (!conversation) {
       return res
         .status(404)
@@ -152,24 +157,21 @@ export const getMessages = async (req, res) => {
     const messages = await messageModel
       .find({ conversation: conversationId })
       .populate("sender", "fullName profilePicture")
-      .populate("reciever", "fullName profilePicture")
+      .populate("receiver", "fullName profilePicture")
       .sort("createdAt");
 
     await messageModel.updateMany(
       {
         conversation: conversationId,
-        reciever: userId,
-        messageStatus: { $in: ["send", "delivered"] },
+        receiver: userId,
+        messageStatus: { $in: ["sent", "delivered"] },
       },
-      { $set: { messageStatus: "read" } }              // ✅ update added
+      { $set: { messageStatus: "read" } }         
     );
-
-    conversation.unreadCount = 0;
-    await conversation.save();
 
     return res
       .status(200)
-      .json({ sucess: true, message: "Message retrived", data: messages });
+      .json({ success: true, message: "Message retrived", data: messages });
   } catch (error) {
     console.error("Error in getMessages", error);
     return res

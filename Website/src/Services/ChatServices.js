@@ -3,7 +3,7 @@ import useUserStore from "../Store/useUserStore";
 
 let socket = null;
 
-const apiUrl = `http://localhost:8000/api/`;
+const apiUrl = `http://localhost:8000`;
 
 export const initializeSocket = () => {
   if (socket) return socket;

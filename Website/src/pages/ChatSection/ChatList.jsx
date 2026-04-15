@@ -22,7 +22,7 @@ const ChatList = ({ contacts }) => {
     <div className={`w-full h-screen border-r border-blue-900/30 bg-[#020818]`}>
       
       {/* Header */}
-      <div className="px-5 py-3 flex justify-between items-center border-b border-blue-900/30">
+      <div className="px-5 py-3 flex justify-between items-center">
         <h2 className="text-2xl font-black bg-linear-to-r from-[#60a5fa] via-[#22d3ee] to-[#a78bfa] bg-clip-text text-transparent tracking-tight">
           Tether
         </h2>
@@ -33,7 +33,7 @@ const ChatList = ({ contacts }) => {
       </div>
 
       {/* search bar */}
-      <div className="px-4 pt-3 pb-1.5">
+      <div className="px-4 pt-1 pb-1.5">
         <div className="relative group">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-blue-300 transition-colors"
@@ -42,7 +42,7 @@ const ChatList = ({ contacts }) => {
           <input
             type="text"
             placeholder="Search chats..."
-            className="w-full pl-10 pr-4 py-1.5 bg-[#06234f]  rounded-full text-white outline-none placeholder:text-blue-300/30 focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+            className="w-full pl-10 pr-4 py-1.5 bg-[#06234f]  rounded-full text-white outline-none placeholder:text-blue-300/30 focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] focus:bg-[#020818]"
             value={searchTerms}
             onChange={(e) => setSearchTerms(e.target.value)}
           />
@@ -50,17 +50,18 @@ const ChatList = ({ contacts }) => {
       </div>
 
       {/* recent chats list */}
-      <div className="overflow-y-auto h-[calc(100vh-140px)]">
+      <div className="overflow-y-auto sidebar-scrollbar h-[calc(100vh-140px)]">
         {filteredContacts?.map((chat) => {
-          const isSelected = selectedContact?._id === chat.user?._id;
+
+          const isSelected = selectedContact?.conversationId === chat.conversationId
 
           return (
             <motion.div
               key={chat.conversationId}
-              onClick={() => setSelectedContact(chat.user)}
-              className={`mx-4 my-1 p-3 flex items-center cursor-pointer transition-all rounded-xl ${
+              onClick={() => setSelectedContact(chat)}
+              className={`mx-4 my-1 p-2.5 flex items-center cursor-pointer transition-all rounded-xl ${
                 isSelected
-                  ? "bg-[#0a1f44] border border-blue-500/50 shadow-lg"
+                  ? "bg-[#0a1f44] shadow-lg"
                   : "hover:bg-[#06234f]/60 border border-transparent hover:border-blue-800/30"
               }`}
             >
@@ -89,13 +90,13 @@ const ChatList = ({ contacts }) => {
                   >
                     {chat?.user?.fullName}
                   </h2>
-                  <span className="text-[11px] text-blue-300/40 ml-2">
+                  <span className="text-[11px] text-blue-300/70 ml-2">
                     {formatTimestamp(chat?.lastMessage?.createdAt)}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center mt-0.5">
-                  <p className="text-[13px] text-blue-200/50 truncate pr-4">
+                  <p className="text-[13px] text-blue-300/70 truncate pr-4">
                     {chat?.lastMessage?.content || "No messages"}
                   </p>
 

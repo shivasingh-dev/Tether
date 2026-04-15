@@ -44,7 +44,7 @@ const Layout = ({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "tween" }}
-              className={`w-full md:w-[32%] border-r border-gray-700/20 h-full`}
+              className={`w-full md:w-[31.5%] border-r border-gray-700/20 h-full`}
             >
               {children}
             </motion.div>

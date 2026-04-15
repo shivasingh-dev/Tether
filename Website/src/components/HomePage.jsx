@@ -17,7 +17,6 @@ const HomePage = () => {
     try {
       const result = await getRecentChats();
       if (result.success === true) {
-        console.log("Data received", result.data);
         setAllUsers(result.data);
       }
     } catch (error) {
@@ -25,15 +24,13 @@ const HomePage = () => {
     }
   };
 
-  console.log(allUsers);
-
   useEffect(() => {
     getRecentChat();
   }, []);
 
-  useEffect(() => {
-    console.log("Updated Users State:", allUsers);
-  }, [allUsers]); // Jab bhi allUsers change hoga, ye print karega
+  // useEffect(() => {
+  //   console.log("Updated Users State:", allUsers);
+  // }, [allUsers]); 
 
   return (
     <Layout>

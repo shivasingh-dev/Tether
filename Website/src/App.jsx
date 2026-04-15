@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { use, useEffect } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import Welcome from "./pages/WelcomeSection/Welcome";
 import ChatList from "./pages/ChatSection/ChatList.jsx";
@@ -10,19 +10,27 @@ import Status from "./pages/StatusSection/Status.jsx";
 import Settings from "./pages/SettingSection/Settings.jsx";
 import useUserStore from "./Store/useUserStore.js";
 import { disconnectSocket, initializeSocket } from "./Services/ChatServices.js";
+import { useChatStore } from "./Store/useChatStore.js";
 
 const App = () => {
   const { user } = useUserStore();
+  const {setCurrentUser, initSocketListeners, cleanUp} = useChatStore()
 
   useEffect(() => {
     if (user?._id) {
       const socket = initializeSocket();
+
+      if (socket) {
+        setCurrentUser(user)
+        initSocketListeners()
+      }
     }
 
     return () => {
+      cleanUp()
       disconnectSocket();
     };
-  }, [user]);
+  }, [user, setCurrentUser, initSocketListeners, cleanUp]);
 
   return (
     <>

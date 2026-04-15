@@ -30,7 +30,7 @@ export const useChatStore = create((set, get) => ({
     socket.on("receive_message", (message) => {});
 
     // confirm message delivery
-    socket.on("messsage_send", (message) => {
+    socket.on("message_send", (message) => {
       set((state) => ({
         messages: state.messages.map((msg) =>
           msg._id === message._id ? { ...msg } : msg,
@@ -48,7 +48,7 @@ export const useChatStore = create((set, get) => ({
     });
 
     // handle reaction on message
-    socket.on("reaction_update", ({ messageId, reactions }) => {
+    socket.on("reaction_updated", ({ messageId, reactions }) => {
       set((state) => ({
         messages: state.messages.map((msg) =>
           msg._id === messageId ? { ...msg, reactions } : msg,
@@ -73,7 +73,7 @@ export const useChatStore = create((set, get) => ({
       set((state) => {
         const newTypingUsers = new Map(state.typingUsers);
         if (!newTypingUsers.has(conversationId)) {
-          newTypingUsers.set(conversationId, new set());
+          newTypingUsers.set(conversationId, new Set());
         }
         const typingSet = newTypingUsers.get(conversationId);
         if (isTyping) {
@@ -124,7 +124,7 @@ export const useChatStore = create((set, get) => ({
   fetchConversations: async () => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axiosInstance.get("/chats/conversaions");
+      const { data } = await axiosInstance.get("/chats/conversations");
       set({ conversations: data, loading: false }),
         get().initSocketListeners();
       return data; 
@@ -137,7 +137,7 @@ export const useChatStore = create((set, get) => ({
   },
 
   // fetch message for a conversation
-  fetchMessages: async () => {
+  fetchMessages: async (conversationId) => {
     if (!conversationId) return;
 
     set({ loading: true, error: null });
