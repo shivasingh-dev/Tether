@@ -1,11 +1,13 @@
 import { create } from "zustand";
-import { getSocket } from "../Services/ChatServices";
+import { disconnectSocket, getSocket } from "../Services/ChatServices";
 import { Socket } from "socket.io-client";
 import axiosInstance from "../Services/UrlService";
+import useUserStore from "./useUserStore";
 
 export const useChatStore = create((set, get) => ({
   conversations: [],
   currentConversation: null,
+  setCurrentConversation: (convId) => set({ currentConversation: convId }),
   messages: [],
   loading: false,
   error: null,
@@ -25,9 +27,13 @@ export const useChatStore = create((set, get) => ({
     socket.off("message_send");
     socket.off("message_error");
     socket.off("message_deleted");
+    socket.off("reaction_updated");
+    socket.off("message_status_update");
 
     // listen for incoming message
-    socket.on("receive_message", (message) => {});
+    socket.on("receive_message", (message) => {
+      get().receiveMessage(message);
+    });
 
     // confirm message delivery
     socket.on("message_send", (message) => {
@@ -39,12 +45,61 @@ export const useChatStore = create((set, get) => ({
     });
 
     // update message status
-    socket.on("message_status", ({ messageId, messageStatus }) => {
-      set((state) => ({
-        messages: state.messages.map((msg) =>
-          msg._id === messageId ? { ...msg, messageStatus } : msg,
-        ),
-      }));
+    // socket.on("message_status_update", ({ messageId, messageStatus }) => {
+    //   console.log(
+    //     "received message id and message status",
+    //     messageId,
+    //     messageStatus,
+    //   );
+    //   const { messages, conversations } = get();
+    //   const msgExists = messages.some((msg) => msg._id === messageId);
+    //   set((state) => ({
+    //     messages: state.messages.map((msg) =>
+    //       msg._id === messageId ? { ...msg, messageStatus } : msg,
+    //     ),
+    //   }));
+    // });
+
+    // claude code
+    socket.on("message_status_update", ({ messageId, messageStatus }) => {
+      console.log("message_status_update received", messageId, messageStatus);
+
+      const { messages, conversations } = get();
+
+      // 1. ✅ Current open chat ke messages update karo
+      const msgExists = messages.some((msg) => msg._id === messageId);
+
+      if (msgExists) {
+        set((state) => ({
+          messages: state.messages.map((msg) =>
+            msg._id === messageId ? { ...msg, messageStatus } : msg,
+          ),
+        }));
+      }
+
+      // 2. ✅ Sidebar ka lastMessage status bhi update karo
+      // Chahe chat open ho ya band — conversations mein update karo
+      const convList = Array.isArray(conversations)
+        ? conversations
+        : conversations?.data || [];
+
+      if (!convList.length) return;
+
+      const updatedConvList = convList.map((conv) => {
+        if (conv.lastMessage === messageId) {
+          return {
+            ...conv,
+            lastMessage: { ...conv.lastMessage, messageStatus },
+          };
+        }
+        return conv;
+      });
+
+      set({
+        conversations: Array.isArray(conversations)
+          ? updatedConvList
+          : { ...conversations, data: updatedConvList },
+      });
     });
 
     // handle reaction on message
@@ -125,9 +180,9 @@ export const useChatStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { data } = await axiosInstance.get("/chats/conversations");
-      set({ conversations: data, loading: false }),
-        get().initSocketListeners();
-      return data; 
+      set({ conversations: data, loading: false });
+      // get().initSocketListeners();
+      return data;
     } catch (error) {
       set({
         error: error?.response?.data?.message || error?.message,
@@ -235,56 +290,102 @@ export const useChatStore = create((set, get) => ({
         ),
         error: error?.response?.data?.message || error?.message,
       }));
-      throw error
+      throw error;
     }
   },
 
   // receive message
   receiveMessage: (message) => {
-    if (!message) return;
-    const { currentConversation, currentUser, messages } = get();
-    const messageExists = message.some((msg) => (msg._id = message._id));
-    if (messageExists) return;
-    if (message.conversation === currentConversation) {
-      set((state) => ({
-        messages: [...state.messages, message],
-      }));
-
-      // automatically mark as read
-      if (message.receiver?._id === currentUser) {
-        get().markMessagesAsRead();
-      }
+    if (!message) {
+      console.log("❌ ReceiveMessage: No message object received");
+      return;
     }
 
-    // update conversation preview and unread count
-    set((state) => {
-      const updateConversations = state.conversations?.data?.map((conv) => {
-        if (conv._id === message.conversation) {
-          return {
-            ...conv,
-            lastMessage: message,
-            unreadCount:
-              message?.receiver?._id === currentUser?._id
-                ? (conv.unreadCount || 0) + 1
-                : conv.unreadCount || 0,
-          };
-        }
-        return conv;
-      });
-      return {
-        conversations: {
-          ...state.conversation,
-          data: updateConversations,
-        },
-      };
+    const { currentConversation, messages, conversations } = get();
+    const currentUser = useUserStore.getState().user;
+
+    console.log("=== RECEIVE MESSAGE DEBUG ===");
+    console.log("1. conversations:", JSON.stringify(conversations, null, 2));
+    console.log("2. message:", JSON.stringify(message, null, 2));
+    console.log("3. isArray:", Array.isArray(conversations));
+    console.log("4. has .data:", !!conversations?.data);
+
+    const incomingConvId =
+      message.conversation?._id?.toString() || message.conversation?.toString();
+    const activeConvId =
+      currentConversation?._id?.toString() || currentConversation?.toString();
+
+    // --- 1. MESSAGE AREA UPDATE ---
+    if (activeConvId && activeConvId === incomingConvId) { // ← activeConvId truthy check
+  const messageExists = messages.some((msg) => msg._id === message._id);
+  if (!messageExists) {
+    set((state) => ({
+      messages: [...state.messages, message],
+    }));
+
+    if (
+      message.receiver?._id === currentUser?._id ||
+      message.receiver === currentUser?._id
+    ) {
+      get().markMessagesAsRead(incomingConvId);
+    }
+  }
+}
+
+    // --- 2. SIDEBAR UPDATE ---
+    // ✅ FIX: array ya object dono handle karo
+    const convList = Array.isArray(conversations)
+      ? conversations
+      : conversations?.data;
+
+    if (!convList?.length) {
+      console.log("⚠️ Sidebar Update Skipped: convList empty");
+      return;
+    }
+
+    const updatedConversations = convList.map((conv) => {
+      const convId = conv._id?.toString();
+
+      if (convId === incomingConvId) {
+        const isChatOpen = activeConvId === incomingConvId;
+        const isReceiver =
+          message.receiver?._id === currentUser?._id ||
+          message.receiver === currentUser?._id;
+        const shouldIncrement = isReceiver && !isChatOpen;
+
+        return {
+          ...conv,
+          lastMessage: message,
+          unreadCount: shouldIncrement
+            ? (conv.unreadCount || 0) + 1
+            : conv.unreadCount || 0,
+        };
+      }
+      return conv;
+    });
+
+    console.log("=== UPDATED CONVERSATIONS ===", updatedConversations);
+    console.log(
+      "=== SET CONVERSATIONS ===",
+      Array.isArray(conversations)
+        ? updatedConversations
+        : { ...conversations, data: updatedConversations },
+    );
+
+    // ✅ FIX: original structure preserve karo
+    set({
+      conversations: Array.isArray(conversations)
+        ? updatedConversations
+        : { ...conversations, data: updatedConversations },
     });
   },
 
   // mark as read
   markMessagesAsRead: async () => {
-    const { messages, currentUser } = get();
+    const { messages, currentUser, currentConversation  } = get();
 
-    if (!messages.length || !currentUser) return;
+    // ✅ Agar currentConversation null hai toh mat karo
+  if (!messages.length || !currentUser || !currentConversation) return;
     const unreadIds = messages
       .filter(
         (msg) =>
@@ -309,9 +410,17 @@ export const useChatStore = create((set, get) => ({
 
       const socket = getSocket();
       if (socket) {
+        // socket.emit("message_read", {
+        //   messageIds: unreadIds,
+        //   senderId: messages[0]?.sender?._id,
+        // });
+        const otherPersonId = messages.find(
+          (msg) => msg.sender?._id !== currentUser?._id,
+        )?.sender?._id;
+
         socket.emit("message_read", {
           messageIds: unreadIds,
-          senderId: messages[0]?.sender?._id,
+          senderId: otherPersonId,
         });
       }
     } catch (error) {
@@ -393,7 +502,14 @@ export const useChatStore = create((set, get) => ({
     return onlineUsers.get(userId)?.lastSeen || null;
   },
 
+  resetChatState: () =>
+    set({
+      messages: [],
+      currentConversation: null,
+    }),
+
   cleanUp: () => {
+    disconnectSocket();
     set({
       conversations: [],
       currentConversation: null,

@@ -45,7 +45,7 @@ const Settings = () => {
         className={`flex h-screen ${theme === "dark" ? "bg-[rgb(17, 27, 33)] text-white" : "bg-white text-black"}`}
       >
         <div
-          className={`w-100 border-r ${theme === "dark" ? "border-gray-600" : "border-gray-200"}`}
+          className={`w-100 overflow-y-auto border-r ${theme === "dark" ? "border-gray-600" : "border-gray-200"}`}
         >
           <div className="p-4">
             <h1 className="mb-4 text-xl font-semibold">Settings</h1>
@@ -116,13 +116,13 @@ const Settings = () => {
                 </button>
               </div>
 
+            </div>
               <button onClick={handleLogout}
                 className={`flex w-full items-center gap-3 rounded p-2 text-red-500 ${theme === "dark" ? "text-white hover:bg-[#202c33]" : "text-black hover:bg-gray-100"}`}
               >
                 <FaSignInAlt className="h-5 w-5" />
                 Log out
               </button>
-            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { slideLeft } from "../Services/Animation.js";
 import { MdRadioButtonChecked } from "react-icons/md";
 import { FaUserCircle, FaCog } from "react-icons/fa";
+import { useChatStore } from "../Store/useChatStore.js";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -67,7 +68,7 @@ const Sidebar = () => {
       {...slideLeft}
       className={`
         ${isMobile 
-          ? "fixed bottom-0 left-0 right-0 h-16 flex-row justify-around items-center px-6 border-t" 
+          ? "fixed bottom-0 left-0 right-0 h-16 overflow-x-hidden flex-row justify-around items-center px-6 border-t" 
           : "w-14.5 h-screen flex-col items-center py-8 border-r"} 
         ${theme === "dark" 
           ? "bg-[#030b1e] border-blue-500/40" 

@@ -9,8 +9,20 @@ export const sendMessagge = async (req, res) => {
 
     const participants = [senderId, receiverId].sort();
 
+    if (
+      !senderId ||
+      !receiverId ||
+      senderId === "undefined" ||
+      receiverId === "undefined"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Sender ID and Receiver ID are required and must be valid.",
+      });
+    }
+
     let conversation = await conversationModel.findOne({
-      participants: { $all: participants},
+      participants: { $all: participants },
     });
 
     if (!conversation) {
@@ -34,9 +46,9 @@ export const sendMessagge = async (req, res) => {
       }
       imageOrVideoUrl = uploadFile?.secure_url;
 
-      if (file.mimetype.startswith("image")) {
+      if (file.mimetype.startsWith("image")) {
         contentType = "image";
-      } else if (file.mimetype.startswith("video")) {
+      } else if (file.mimetype.startsWith("video")) {
         contentType = "video";
       } else {
         return res
@@ -67,7 +79,8 @@ export const sendMessagge = async (req, res) => {
       conversation.lastMessage = message?._id;
     }
 
-    const currentCount = conversation.unreadCount.get(receiverId.toString()) || 0;
+    const currentCount =
+      conversation.unreadCount.get(receiverId.toString()) || 0;
     conversation.unreadCount.set(receiverId.toString(), currentCount + 1);
     await conversation.save();
 
@@ -78,15 +91,20 @@ export const sendMessagge = async (req, res) => {
 
     // emit socket event for realtime
     if (req.io && req.socketUserMap) {
-      const receiverSocketId = req.socketUserMap.get(receiverId)
-      if (receiverSocketId) {
-        req.io.to(receiverSocketId).emit("receive_message", populateMessage)
-        message.messageStatus = "delivered"
-        await message.save()
+      const receiverSockets = req.socketUserMap.get(receiverId.toString());
+      const isReceiverOnline = receiverSockets && receiverSockets.size > 0;
+      
+      if (isReceiverOnline) {
+        message.messageStatus = "delivered";
+        await message.save();
+        req.io.to(senderId.toString()).emit("message_status_update", {
+          messageId: message._id,
+          messageStatus: "delivered",
+        });
       }
+      req.io.to(receiverId.toString()).emit("receive_message", populateMessage);
     }
-
-
+    
     return res.status(200).json({
       success: true,
       message: "Message sent successfully",
@@ -130,17 +148,16 @@ export const getConversation = async (req, res) => {
   }
 };
 
-// get messages of specific conversation
-
 export const getMessages = async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.userId;
   try {
-    const conversation = await conversationModel.findByIdAndUpdate(conversationId, 
+    const conversation = await conversationModel.findByIdAndUpdate(
+      conversationId,
       {
-        $set: {[`unreadCount.${userId}`]: 0}
+        $set: { [`unreadCount.${userId}`]: 0 },
       },
-      {new: true}
+      { new: true },
     );
     if (!conversation) {
       return res
@@ -166,7 +183,7 @@ export const getMessages = async (req, res) => {
         receiver: userId,
         messageStatus: { $in: ["sent", "delivered"] },
       },
-      { $set: { messageStatus: "read" } }         
+      { $set: { messageStatus: "read" } },
     );
 
     return res
@@ -187,36 +204,36 @@ export const markAsRead = async (req, res) => {
   try {
     let messages = await messageModel.find({
       _id: { $in: messageIds },
-      reciever: userId,
+      receiver: userId,
     });
 
     await messageModel.updateMany(
-      { _id: { $in: messageIds }, reciever: userId },
+      { _id: { $in: messageIds }, receiver: userId },
       { $set: { messageStatus: "read" } },
     );
 
     // emit socket event for notify to original sender
-    if (req.io && req.socketUserMap) {
-      for (const message of messages) {
-        const senderSocketId = req.socketUserMap.get(message?.sender?.toString())
-        if (senderSocketId) {
-          const updatedMessage = {
-            _id: message._id,
-            messageStatus: "read",
-          }
-          req.io.to(senderSocketId).emit("message_read", updatedMessage)
-          await message.save()
-        }
-      }
-    }
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Messages mark as read",
-        data: messages,
-      });
+    // socket server already handle kar raha hai isliye comment out hai
+    // if (req.io && req.socketUserMap) {
+    //   for (const message of messages) {
+    //     const senderSocketId = req.socketUserMap.get(message?.sender?.toString())
+    //     if (senderSocketId) {
+    //       const updatedMessage = {
+    //         _id: message._id,
+    //         messageStatus: "read",
+    //       }
+    //       req.io.to(senderSocketId).emit("message_status_update", updatedMessage)
+    //       await message.save()
+    //     }
+    //   }
+    // }
+
+    return res.status(200).json({
+      success: true,
+      message: "Messages mark as read",
+      data: messages,
+    });
   } catch (error) {
     console.error("Error in markAsRead", error);
     return res
@@ -237,21 +254,23 @@ export const deleteMessage = async (req, res) => {
         .json({ success: false, message: "Message not found" });
     }
     if (message.sender.toString() !== userId) {
-      return res
-        .status(400)
-        .json({
-          sucess: false,
-          message: "Not authorized to delete this message",
-        });
+      return res.status(400).json({
+        sucess: false,
+        message: "Not authorized to delete this message",
+      });
     }
     await messageModel.findByIdAndDelete(messageId);
 
     // emit socket event
 
     if (req.io && req.socketUserMap) {
-      const receiverSocketId = req.socketUserMap.get(message?.reciever?.toString())
+      const receiverSocketId = req.socketUserMap.get(
+        message?.receiver?.toString(),
+      );
       if (receiverSocketId) {
-        req.io.to(receiverSocketId).emit("message_deleted", messageId)
+        req.io
+          .to(receiverSocketId)
+          .emit("message_deleted", { deletedMessageId: messageId });
       }
     }
 

@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import userModel from "../models/user.js";
 import { messageModel } from "../models/message.js";
 import dotenv from "dotenv";
+import { set } from "mongoose";
 
 dotenv.config();
 
@@ -16,8 +17,11 @@ const typingUsers = new Map();
 // main configuration
 
 export const initializeSocket = (server) => {
-
-  const allowedOrigins = ["http://localhost:5173", "http://localhost:8081", process.env.FRONTEND_URL]
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:8081",
+    process.env.FRONTEND_URL,
+  ];
 
   const io = new Server(server, {
     cors: {
@@ -39,7 +43,12 @@ export const initializeSocket = (server) => {
     socket.on("user_connected", async (connectingUserId) => {
       try {
         userId = connectingUserId;
-        onlineUsers.set(userId, socket.id);
+
+        // online user set mein multiple device add karo overrite nahi
+        if (!onlineUsers.has(userId)) {
+          onlineUsers.set(userId, new Set());
+        }
+        onlineUsers.get(userId).add(socket.id);
         socket.join(userId); // join personal room  for direct emit
 
         // update user status in db
@@ -55,10 +64,11 @@ export const initializeSocket = (server) => {
       }
     });
 
-    // return online  status of requested user
+    // return online status of requested user
 
     socket.on("get_user_status", (requestedUserId, callBack) => {
-      const isOnline = onlineUsers.has(requestedUserId);
+      const userSockets = onlineUsers.get(requestedUserId);
+      const isOnline = userSockets && userSockets.size > 0;
       callBack({
         userId: requestedUserId,
         isOnline,
@@ -70,10 +80,7 @@ export const initializeSocket = (server) => {
 
     socket.on("send_message", async (message) => {
       try {
-        const receiverSocketId = onlineUsers.get(message.receiver?._id);
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("receive_message", message);
-        }
+        io.to(message.receiver?._id?.toString()).emit("receive_message", message);
       } catch (error) {
         console.error("Error in send message in socket server", error);
         socket.emit("message_error", { error: "Failed to send message" });
@@ -89,15 +96,12 @@ export const initializeSocket = (server) => {
           { $set: { messageStatus: "read" } },
         );
 
-        const senderSocketId = onlineUsers.get(senderId);
-        if (senderSocketId) {
-          messageIds.forEach((messageId) => {
-            io.to(senderSocketId).emit("message_status_update", {
-              messageId,
-              messageStatus: "read",
-            });
+        messageIds.forEach((messageId) => {
+          io.to(senderId).emit("message_status_update", {
+            messageId,
+            messageStatus: "read",
           });
-        }
+        });
       } catch (error) {
         console.error("Error in updating message status to read", error);
       }
@@ -161,7 +165,7 @@ export const initializeSocket = (server) => {
 
     socket.on(
       "add_reaction",
-      async ({ messageId, emoji, userId:reactionUserId }) => {
+      async ({ messageId, emoji, userId: reactionUserId }) => {
         try {
           const message = await messageModel.findById(messageId);
           if (!message) return;
@@ -181,7 +185,7 @@ export const initializeSocket = (server) => {
             }
           } else {
             // add new reaction
-            message.reactions.push({user:reactionUserId, emoji});
+            message.reactions.push({ user: reactionUserId, emoji });
           }
 
           await message.save();
@@ -189,7 +193,7 @@ export const initializeSocket = (server) => {
           const populateMessage = await messageModel
             .findById(message?._id)
             .populate("sender", "fullName profilePicture")
-            .populate("reciever", "fullName profilePicture")
+            .populate("receiver", "fullName profilePicture")
             .populate("reactions.user", "fullName");
 
           const reactionUpdated = {
@@ -197,17 +201,14 @@ export const initializeSocket = (server) => {
             reactions: populateMessage.reactions,
           };
 
-          const senderSocket = onlineUsers.get(
-            populateMessage?.sender._id?.toString(),
+          io.to(populateMessage.sender._id.toString()).emit(
+            "reaction_updated",
+            reactionUpdated,
           );
-          const receiverSocket = onlineUsers.get(
-            populateMessage?.reciever._id?.toString(),
+          io.to(populateMessage.receiver._id.toString()).emit(
+            "reaction_updated",
+            reactionUpdated,
           );
-
-          if (senderSocket)
-            io.to(senderSocket).emit("reaction_updated", reactionUpdated);
-          if (receiverSocket)
-            io.to(receiverSocket).emit("reaction_updated", reactionUpdated);
         } catch (error) {
           console.error("Error in reactions handling", error);
         }
@@ -220,7 +221,10 @@ export const initializeSocket = (server) => {
       if (!userId) return;
 
       try {
-        onlineUsers.delete(userId);
+        const userSockets = onlineUsers.get(userId);
+        if (userSockets) {
+          userSockets.delete(socket.id);
+        }
 
         // clear all typing timeouts
         if (typingUsers.has(userId)) {
@@ -232,10 +236,13 @@ export const initializeSocket = (server) => {
           typingUsers.delete(userId);
         }
 
-        await userModel.findByIdAndUpdate(userId, {
-          isOnline: false,
-          lastSeen: new Date(),
-        });
+        if (userSockets.size === 0) {
+          onlineUsers.delete(userId);
+          await userModel.findByIdAndUpdate(userId, {
+            isOnline: false,
+            lastSeen: new Date(),
+          });
+        }
 
         io.emit("user_status", {
           userId,

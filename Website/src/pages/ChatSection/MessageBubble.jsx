@@ -11,7 +11,6 @@ import {
 import { HiDotsVertical } from "react-icons/hi";
 import useOutsideClick from "../../hooks/useOutsideClick";
 import EmojiPicker from "emoji-picker-react";
-import { RxCross2 } from "react-icons/rx";
 import { Check, CheckCheck } from "lucide-react";
 
 const MessageBubble = ({
@@ -40,7 +39,6 @@ const MessageBubble = ({
   const quickReactions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
   const handleReact = (emoji) => {
-    console.log("Received emoji in handleReact:", emoji);
     onReact(message._id, emoji);
     setShowEmojiPicker(false);
     setshowReactions(false);
@@ -98,6 +96,27 @@ const MessageBubble = ({
               <img
                 src={message.imageOrVideoUrl}
                 alt="media"
+                className="rounded-xl max-w-xs border border-blue-900/20 object-cover"
+              />
+              {message.content && (
+                <p className="text-[14px] leading-relaxed mt-1 wrap-break-word">
+                  {message.content}
+                  <span className="inline-block w-16.25 h-1" aria-hidden="true">
+                    &#8203;
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Video Content */}
+          {message.contentType === "video" && (
+            <div className="relative pb-5">
+              {" "}
+              <video
+                src={message.imageOrVideoUrl}
+                alt="media"
+                controls
                 className="rounded-xl max-w-xs border border-blue-900/20 object-cover"
               />
               {message.content && (

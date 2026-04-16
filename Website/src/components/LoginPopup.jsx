@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react' // Loader2 add kiya hai
+import { X, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react' 
 import { toast } from 'react-toastify';
 import * as Yup from 'yup'
 import { useFormik } from 'formik'

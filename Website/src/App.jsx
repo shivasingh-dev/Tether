@@ -14,23 +14,26 @@ import { useChatStore } from "./Store/useChatStore.js";
 
 const App = () => {
   const { user } = useUserStore();
-  const {setCurrentUser, initSocketListeners, cleanUp} = useChatStore()
+  const { setCurrentUser, initSocketListeners, cleanUp, fetchConversations } =
+    useChatStore();
 
   useEffect(() => {
     if (user?._id) {
       const socket = initializeSocket();
 
       if (socket) {
-        setCurrentUser(user)
-        initSocketListeners()
+        setCurrentUser(user);
+        console.log(user);
+        initSocketListeners();
+        fetchConversations();
       }
     }
 
     return () => {
-      cleanUp()
+      cleanUp();
       disconnectSocket();
     };
-  }, [user, setCurrentUser, initSocketListeners, cleanUp]);
+  }, [user]);
 
   return (
     <>

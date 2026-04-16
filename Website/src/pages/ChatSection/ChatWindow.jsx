@@ -36,7 +36,6 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const messageEndRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
-  const { theme } = useThemeStore();
   const { user } = useUserStore();
 
   const {
@@ -47,14 +46,17 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     fetchMessages,
     fetchConversations,
     conversations,
+    setCurrentConversation,
     isUserTyping,
     startTyping,
     stopTyping,
     getUserLastSeen,
     isUserOnline,
     cleanUp,
+    resetChatState,
     addReactions,
     deleteMessage,
+    initSocketListeners,
   } = useChatStore();
 
   // get online status and last seen
@@ -63,19 +65,23 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const isTyping = isUserTyping(selectedContact?._id);
 
   useEffect(() => {
-    const convId =
-      selectedContact?.conversationId || selectedContact?.conversation?._id;
+    const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
     if (convId) {
+      setCurrentConversation(convId);
+      console.log("Conversation id set to", convId)
       fetchMessages(convId);
     }
-  }, [selectedContact]);
+  }, [selectedContact, setCurrentConversation]);
 
-  useEffect(() => {
-    fetchConversations();
+  useEffect(() => {;
+    initSocketListeners();
+    return () => {  
+    set({ messages: [], currentConversation: null });
+  };
   }, []);
 
   const scrollToBottom = () => {
-    messageEndRef.current?.scrollIntoView({ behaviour: "auto" });
+    messageEndRef.current?.scrollIntoView({ behaviour: "smooth" });
   };
 
   useEffect(() => {
@@ -102,25 +108,25 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   }, [message, selectedContact, startTyping, stopTyping]);
 
   const handleFileChange = (e) => {
-    const fileChange = e.target.files(0);
+    const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
       setShowFileMenu(false);
-      if (file.type.startsWith("image/")) {
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
         setFilePreview(URL.createObjectURL(file));
       }
     }
   };
 
   const handleSendMessage = async () => {
-    if (!selectedContact) return;
+    if (!selectedContact || !user?._id) {
+      console.error('Sender or Contact missing')
+      return
+    };
 
     try {
       const formData = new FormData();
       formData.append("senderId", user?._id);
-
-      // 2. Receiver ID (Dhyan se rasta check karein)
-      // Agar ChatList se 'chat' pass kiya hai, toh ID 'selectedContact.user._id' mein hogi
       const receiverId = selectedContact?.user?._id || selectedContact?._id;
 
       if (!receiverId || receiverId === "undefined") {
@@ -168,8 +174,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   };
 
   // Group message
-  const groupedMessages = Array.isArray(messages)
-    ? messages.reduce((acc, message) => {
+  const groupedMessages = Array.isArray(messages) ? messages.reduce((acc, message) => {
       if (!message.createdAt) return acc;
       const date = new Date(message.createdAt);
       if (isValidate(date)) {
@@ -236,7 +241,10 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       <div className="px-4 py-2.75 bg-[#020818]  border-blue-900/30 flex items-center gap-3 shadow-[0_4px_24px_rgba(0,0,255,0.08)]">
         {/* Back button */}
         <button
-          onClick={() => setSelectedContact(null)}
+          onClick={() => {
+            setSelectedContact(null)
+            setCurrentConversation(null)
+          }}
           className="p-2 rounded-full text-blue-400 hover:bg-blue-900/30 transition-colors cursor-pointer"
         >
           <FaArrowLeft size={19} />
@@ -329,11 +337,19 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       {filePreview && (
         <div className="relative px-4 py-2 bg-[#020818] border-t border-blue-900/30">
           <div className="relative w-fit mx-auto">
-            <img
+            {selectedFile?.type.startsWith("video/") ? (
+              <video 
+                src={filePreview}
+                controls
+                className="w-80 object-cover rounded shadow-lg mx-auto"
+              />
+            ) : (
+              <img
               src={filePreview}
               className="max-h-40 max-w-xs object-cover rounded-xl border border-blue-500/20"
               alt="preview"
             />
+            )}
             <button
               onClick={() => {
                 setFilePreview(null);

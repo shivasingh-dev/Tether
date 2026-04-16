@@ -11,31 +11,28 @@ const HomePage = () => {
     (state) => state.setSelectedContact,
   );
 
-  const [allUsers, setAllUsers] = useState([]);
+  // const [allUsers, setAllUsers] = useState([]);
 
-  const getRecentChat = async () => {
-    try {
-      const result = await getRecentChats();
-      if (result.success === true) {
-        setAllUsers(result.data);
-      }
-    } catch (error) {
-      console.error("Error in get all users", error);
-    }
-  };
-
-  useEffect(() => {
-    getRecentChat();
-  }, []);
+  // const getRecentChat = async () => {
+  //   try {
+  //     const result = await getRecentChats();
+  //     if (result.success === true) {
+  //       setAllUsers(result.data);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in get all users", error);
+  //   }
+  // };
 
   // useEffect(() => {
-  //   console.log("Updated Users State:", allUsers);
-  // }, [allUsers]); 
+  //   getRecentChat();
+  // }, []);
 
   return (
     <Layout>
       <motion.div {...slideLeft}>
-        <ChatList contacts={allUsers} />
+         {/* <ChatList /> ❌ contacts prop mat do */}
+        <ChatList  />  
       </motion.div>
     </Layout>
   );
