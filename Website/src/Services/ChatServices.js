@@ -8,6 +8,7 @@ const apiUrl = `http://localhost:8000`;
 export const initializeSocket = () => {
   if (socket) return socket;
 
+  
   const user = useUserStore.getState().user;
 
   const BACKEND_URL = apiUrl;

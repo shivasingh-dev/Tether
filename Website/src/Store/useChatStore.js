@@ -14,6 +14,7 @@ export const useChatStore = create((set, get) => ({
   onlineUsers: new Map(),
   typingUsers: new Map(),
 
+  
   // socket event listener setup
 
   initSocketListeners: () => {
@@ -45,24 +46,7 @@ export const useChatStore = create((set, get) => ({
     });
 
     // update message status
-    // socket.on("message_status_update", ({ messageId, messageStatus }) => {
-    //   console.log(
-    //     "received message id and message status",
-    //     messageId,
-    //     messageStatus,
-    //   );
-    //   const { messages, conversations } = get();
-    //   const msgExists = messages.some((msg) => msg._id === messageId);
-    //   set((state) => ({
-    //     messages: state.messages.map((msg) =>
-    //       msg._id === messageId ? { ...msg, messageStatus } : msg,
-    //     ),
-    //   }));
-    // });
-
-    // claude code
     socket.on("message_status_update", ({ messageId, messageStatus }) => {
-      console.log("message_status_update received", messageId, messageStatus);
 
       const { messages, conversations } = get();
 
@@ -152,19 +136,21 @@ export const useChatStore = create((set, get) => ({
 
     // emit status check for all users in conversation list
     const { conversations } = get();
-    if (conversations?.data?.length > 0) {
-      conversations?.data?.forEach((conv) => {
-        const otherUser = conv.participants.find(
-          (p) => p._id !== get().currentUser._id,
+    const convList = Array.isArray(conversations) ? conversations : (conversations?.data || []);
+    
+    if (convList.length > 0) {
+      convList.forEach((conv) => {
+        const otherUser = conv.participants?.find(
+          (p) => p._id !== get().currentUser?._id,
         );
 
-        if (otherUser._id) {
+        if (otherUser && otherUser._id) {
           socket.emit("get_user_status", otherUser._id, (status) => {
             set((state) => {
               const newOnlineUsers = new Map(state.onlineUsers);
-              newOnlineUsers.set(state.userId, {
-                isOnline: state.isOnline,
-                lastSeen: state.lastSeen,
+              newOnlineUsers.set(status.userId, {
+                isOnline: status.isOnline,
+                lastSeen: status.lastSeen || otherUser.lastSeen,
               });
               return { onlineUsers: newOnlineUsers };
             });
@@ -201,10 +187,28 @@ export const useChatStore = create((set, get) => ({
         `/chats/conversations/${conversationId}/messages`,
       );
       const messageArray = data.data || data || [];
-      set({
-        messages: messageArray,
-        currentConversation: conversationId,
-        loading: false,
+      const currentUser = useUserStore.getState().user;
+      
+      set((state) => {
+        const cList = Array.isArray(state.conversations) ? state.conversations : state.conversations?.data || [];
+        const updatedConversations = cList.map(conv => {
+           if (conv._id === conversationId) {
+              let newUnreadCount = typeof conv.unreadCount === "object" && conv.unreadCount !== null 
+                ? { ...conv.unreadCount } : {};
+              if (currentUser?._id) {
+                newUnreadCount[currentUser?._id] = 0;
+              }
+              return { ...conv, unreadCount: newUnreadCount };
+           }
+           return conv;
+        });
+        
+        return {
+          messages: messageArray,
+          currentConversation: conversationId,
+          loading: false,
+          conversations: Array.isArray(state.conversations) ? updatedConversations : { ...state.conversations, data: updatedConversations }
+        };
       });
 
       // mark unread message as read
@@ -233,11 +237,13 @@ export const useChatStore = create((set, get) => ({
 
     const { conversations } = get();
     let conversationId = null;
-    if (conversations?.data?.length > 0) {
-      const conversation = conversations.data.find(
+    const convList = Array.isArray(conversations) ? conversations : (conversations?.data || []);
+
+    if (convList.length > 0) {
+      const conversation = convList.find(
         (conv) =>
-          conv.participants.some((p) => p._id === senderId) &&
-          conv.participants.some((p) => p._id === receiverId),
+          conv.participants.some((p) => p._id === senderId || p === senderId) &&
+          conv.participants.some((p) => p._id === receiverId || p === receiverId),
       );
       if (conversation) {
         conversationId = conversation._id;
@@ -276,12 +282,29 @@ export const useChatStore = create((set, get) => ({
       );
       const messageData = data.data || data;
 
-      // replace optimistic message with real one
-      set((state) => ({
-        messages: state.messages.map((msg) =>
-          msg._id === tempId ? messageData : msg,
-        ),
-      }));
+      // replace optimistic message with real one and update conversation's last message
+      set((state) => {
+        const cList = Array.isArray(state.conversations)
+          ? state.conversations
+          : state.conversations?.data || [];
+        const messageConvId = messageData.conversation?._id || messageData.conversation;
+
+        const updatedConversations = cList.map((conv) => {
+          if (conv._id === messageConvId || conv._id === conversationId) {
+            return { ...conv, lastMessage: messageData };
+          }
+          return conv;
+        });
+
+        return {
+          messages: state.messages.map((msg) =>
+            msg._id === tempId ? messageData : msg,
+          ),
+          conversations: Array.isArray(state.conversations)
+            ? updatedConversations
+            : { ...state.conversations, data: updatedConversations },
+        };
+      });
     } catch (error) {
       console.error("Error in sending message", error);
       set((state) => ({
@@ -353,12 +376,18 @@ export const useChatStore = create((set, get) => ({
           message.receiver === currentUser?._id;
         const shouldIncrement = isReceiver && !isChatOpen;
 
+        let newUnreadCount = typeof conv.unreadCount === "object" && conv.unreadCount !== null
+          ? { ...conv.unreadCount } : {};
+
+        if (shouldIncrement && currentUser?._id) {
+          const currentCount = newUnreadCount[currentUser._id] || 0;
+          newUnreadCount[currentUser._id] = currentCount + 1;
+        }
+
         return {
           ...conv,
           lastMessage: message,
-          unreadCount: shouldIncrement
-            ? (conv.unreadCount || 0) + 1
-            : conv.unreadCount || 0,
+          unreadCount: newUnreadCount,
         };
       }
       return conv;

@@ -60,15 +60,21 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   } = useChatStore();
 
   // get online status and last seen
-  const online = isUserOnline(selectedContact?._id);
-  const lastSeen = getUserLastSeen(selectedContact?._id);
-  const isTyping = isUserTyping(selectedContact?._id);
+  const receiverId = selectedContact?.user?._id || selectedContact?._id;
+  const storeOnline = isUserOnline(receiverId);
+  const online = useChatStore.getState().onlineUsers.has(receiverId) 
+                 ? storeOnline 
+                 : selectedContact?.user?.isOnline;
+                 
+  const storeLastSeen = getUserLastSeen(receiverId);
+  const lastSeen = storeLastSeen || selectedContact?.user?.lastSeen;
+
+  const isTyping = isUserTyping(receiverId);
 
   useEffect(() => {
     const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
     if (convId) {
       setCurrentConversation(convId);
-      console.log("Conversation id set to", convId)
       fetchMessages(convId);
     }
   }, [selectedContact, setCurrentConversation]);
@@ -76,7 +82,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   useEffect(() => {;
     initSocketListeners();
     return () => {  
-    set({ messages: [], currentConversation: null });
+    // set({ messages: [], currentConversation: null });
+    resetChatState();
   };
   }, []);
 
@@ -90,14 +97,14 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
   useEffect(() => {
     if (message && selectedContact) {
-      startTyping(selectedContact?._id);
+      startTyping(receiverId);
 
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
 
       typingTimeoutRef.current = setTimeout(() => {
-        stopTyping(selectedContact?._id);
+        stopTyping(receiverId);
       }, 2000);
     }
     return () => {

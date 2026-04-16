@@ -22,11 +22,15 @@ const ChatList = () => {
     : conversations?.data || [];
   const contacts = convList.map((conv) => {
     const otherUser = conv.participants?.find((p) => p._id !== user?._id);
+    const unread = typeof conv.unreadCount === "object" && conv.unreadCount !== null
+      ? (conv.unreadCount?.[user?._id] || 0)
+      : Number(conv.unreadCount || 0);
+
     return {
       conversationId: conv._id,
       user: otherUser,
       lastMessage: conv.lastMessage,
-      unreadCount: conv.unreadCount,
+      unreadCount: unread,
     };
   });
 

@@ -23,7 +23,6 @@ const App = () => {
 
       if (socket) {
         setCurrentUser(user);
-        console.log(user);
         initSocketListeners();
         fetchConversations();
       }

@@ -35,6 +35,7 @@ export const sendMessagge = async (req, res) => {
     let imageOrVideoUrl = null;
     let contentType = null;
 
+    
     // media upload handled here
     if (file) {
       const uploadFile = await uploadFileToCloudinary(file);
@@ -97,6 +98,7 @@ export const sendMessagge = async (req, res) => {
       if (isReceiverOnline) {
         message.messageStatus = "delivered";
         await message.save();
+        populateMessage.messageStatus = "delivered";
         req.io.to(senderId.toString()).emit("message_status_update", {
           messageId: message._id,
           messageStatus: "delivered",
