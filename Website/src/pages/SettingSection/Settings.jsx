@@ -42,38 +42,62 @@ const Settings = () => {
       toggleThemeDialog={toggleThemeDialog}
     >
       <div
-        className={`flex h-screen ${theme === "dark" ? "bg-[rgb(17, 27, 33)] text-white" : "bg-white text-black"}`}
+        className={`flex h-screen ${
+          theme === "dark"
+            ? "bg-linear-to-br from-[#020818] via-[#030f2e] to-[#020818] text-white"
+            : "bg-white text-black"
+        }`}
       >
         <div
-          className={`w-100 overflow-y-auto border-r ${theme === "dark" ? "border-gray-600" : "border-gray-200"}`}
+          className={`w-full max-w-sm overflow-y-auto sidebar-scrollbar border-r bg-transparent ${
+            theme === "dark" ? "border-blue-900/30" : "border-gray-200"
+          }`}
         >
           <div className="p-4">
-            <h1 className="mb-4 text-xl font-semibold">Settings</h1>
+            {/* Header */}
+            <h1 className="mb-4 text-xl font-bold">Settings</h1>
+
+            {/* Search bar */}
             <div className="relative mb-4">
-              <FaSearch className="absolute top-2.5 left-3 h-4 w-4 text-gray-400" />
+              <FaSearch className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-blue-400" />
               <input
                 type="text"
                 placeholder="Search settings"
-                className={`w-full ${theme === "dark" ? "bg-[#202c33] text-white" : "bg-gray-100 text-black"} rounded border-none p-2 pl-10 placeholder-gray-400`}
+                className={`w-full rounded-lg border-none py-2 pr-4 pl-10 text-sm outline-none placeholder:text-gray-500 ${
+                  theme === "dark"
+                    ? "bg-[#06234f] text-white focus:ring-1 focus:ring-blue-500"
+                    : "bg-gray-100 text-black"
+                }`}
               />
             </div>
 
+            {/* Profile section */}
             <div
-              className={`flex items-center gap-4 p-3 ${theme === "dark" ? "hover:bg-[#202c33]" : "hover:bg-gray-100"} mb-4 cursor-pointer rounded-lg`}
+              className={`mb-4 flex items-center gap-4 rounded-xl p-3 ${
+                theme === "dark" ? "hover:bg-[#06234f]/60" : "hover:bg-gray-100"
+              } transition-all`}
             >
-              <img
-                src={user.profilePicture}
-                alt="profile"
-                className="h-14 w-14 rounded-full"
-              />
-              <div>
-                <h2 className="font-semibold">{user?.fullName}</h2>
-                <p className="text-sm text-gray-400">{user?.about}</p>
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt="profile"
+                  className="h-14 w-14 shrink-0 rounded-full border border-blue-500/20 object-cover"
+                />
+              ) : (
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+                  <span className="text-xl font-bold text-blue-400">
+                    {user?.fullName?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="min-w-0">
+                <h2 className="truncate font-semibold">{user?.fullName}</h2>
+                <p className="truncate text-sm text-gray-400">{user?.about}</p>
               </div>
             </div>
 
-            {/* menu itmes */}
-            <div className="h-[calc(100vh - 200px)] overflow-y-auto">
+            {/* Menu items */}
+            <div className="h-[calc(100vh-260px)] overflow-y-auto">
               <div className="space-y-1">
                 {[
                   { icon: FaUser, label: "Account", href: "/user-profile" },
@@ -83,11 +107,19 @@ const Settings = () => {
                   <Link
                     to={item.href}
                     key={item.label}
-                    className={`flex w-full items-center gap-3 rounded p-2 ${theme === "dark" ? "text-white hover:bg-[#202c33]" : "text-black hover:bg-gray-100"}`}
+                    className={`flex w-full items-center gap-4 rounded-lg px-3 py-2 transition-all ${
+                      theme === "dark"
+                        ? "text-white hover:bg-[#06234f]/60"
+                        : "text-black hover:bg-gray-100"
+                    }`}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon className="h-5 w-5 shrink-0 text-blue-400" />
                     <div
-                      className={`border-b ${theme === "dark" ? "border-gray-700" : "border-gray-200"} w-full p-4`}
+                      className={`w-full border-b py-3 text-sm ${
+                        theme === "dark"
+                          ? "border-blue-900/30"
+                          : "border-gray-200"
+                      }`}
                     >
                       {item.label}
                     </div>
@@ -97,32 +129,41 @@ const Settings = () => {
                 {/* Theme button */}
                 <button
                   onClick={toggleThemeDialog}
-                  className={`flex w-full items-center gap-3 rounded p-2 ${theme === "dark" ? "text-white hover:bg-[#202c33]" : "text-black hover:bg-gray-100"}`}
+                  className={`flex w-full items-center gap-4 cursor-pointer rounded-lg px-3 py-2 transition-all ${
+                    theme === "dark"
+                      ? "text-white hover:bg-[#06234f]/60"
+                      : "text-black hover:bg-gray-100"
+                  }`}
                 >
                   {theme === "dark" ? (
-                    <FaMoon className="h-5 w-5" />
+                    <FaMoon className="h-5 w-5 shrink-0 text-blue-400" />
                   ) : (
-                    <FaSun className="h-5 w-5" />
+                    <FaSun className="h-5 w-5 shrink-0 text-yellow-400" />
                   )}
-
                   <div
-                    className={`flex flex-col border-b text-start ${theme === "dark" ? "border-gray-700" : "border-gray-200"} w-full p-2`}
+                    className={`flex w-full items-center justify-between border-b py-3 text-sm ${
+                      theme === "dark"
+                        ? "border-blue-900/30"
+                        : "border-gray-200"
+                    }`}
                   >
-                    Theme
-                    <span className="ml-auto text-sm text-gray-400">
+                    <span>Theme</span>
+                    <span className="text-gray-400">
                       {theme.charAt(0).toUpperCase() + theme.slice(1)}
                     </span>
                   </div>
                 </button>
               </div>
-
             </div>
-              <button onClick={handleLogout}
-                className={`flex w-full items-center gap-3 rounded p-2 text-red-500 ${theme === "dark" ? "text-white hover:bg-[#202c33]" : "text-black hover:bg-gray-100"}`}
-              >
-                <FaSignInAlt className="h-5 w-5" />
-                Log out
-              </button>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className={`mt-2 flex w-full items-center cursor-pointer gap-4 rounded-lg px-3 py-2 text-red-400 transition-all hover:bg-red-500/10`}
+            >
+              <FaSignInAlt className="h-5 w-5 shrink-0" />
+              <span className="text-sm">Log out</span>
+            </button>
           </div>
         </div>
       </div>

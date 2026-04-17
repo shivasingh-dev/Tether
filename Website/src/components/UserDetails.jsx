@@ -81,209 +81,185 @@ const UserDetails = () => {
   };
 
   return (
-    <Layout>
-      <motion.div
-        {...fadeIn}
-        className={`flex min-h-screen w-full border-r ${theme === "dark" ? "bg-[rgb(17, 27, 33)] text-whit border-gray-600" : "border-gray-200 bg-gray-100 text-black"}`}
-      >
-        <div className="w-full rounded-lg p-6">
-          <div className="mb-6 flex items-center">
-            <h1 className="text-2xl font-bold">Profile</h1>
+  <Layout>
+    <motion.div
+      {...fadeIn}
+      className={`flex min-h-screen w-full border-r overflow-y-auto ${
+        theme === "dark"
+          ? "bg-linear-to-r from-[#020818] via-[#030f2e] to-[#020818] text-white border-blue-900/30"
+          : "border-gray-200 bg-gray-100 text-black"
+      }`}
+    >
+      <div className="w-full rounded-lg p-6">
+        <div className="mb-6 flex items-center">
+          <h1 className="text-2xl font-bold">Profile</h1>
+        </div>
+
+        <div className="space-y-6">
+          {/* Avatar */}
+          <div className="flex flex-col items-center">
+            <div className="group relative">
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt="profile photo"
+                  className="mb-2 h-32 w-32 rounded-full object-cover border border-blue-500/20"
+                />
+              ) : (
+                <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+                  <span className="text-6xl font-semibold text-blue-400">
+                    {user?.fullName?.[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <label
+                htmlFor="profileUpload"
+                className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <div className="text-center text-white">
+                  <FaCamera className="mx-auto mb-2 h-8 w-8" />
+                  <span className="text-sm">Change</span>
+                </div>
+                <input
+                  type="file"
+                  id="profileUpload"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex flex-col items-center">
-              <div className="group: relative">
-                {user?.profilePicture ? (
-                  <img
-                    src={user.profilePicture}
-                    alt="profile photo"
-                    className="mb-2 h-40 w-40 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
-                    <span className="text-7xl font-semibold text-blue-400">
-                      {user?.fullName[0].toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <label
-                  htmlFor="profileUpload"
-                  className="bg-opacity-50 absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <div className="text-center text-white">
-                    <FaCamera className="mx-auto mb-2 h-8 w-8" />
-                    <span>Change</span>
-                  </div>
-                  <input
-                    type="file"
-                    id="profileUpload"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
+          {/* Save/Discard buttons */}
+          {preview && (
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={() => handleSave("profile")}
+                className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-white transition-all hover:bg-blue-700"
+              >
+                {isLoading ? "Saving..." : "Change"}
+              </button>
+              <button
+                onClick={() => {
+                  setProfilePicture(null);
+                  setPreview(null);
+                }}
+                className="cursor-pointer rounded-lg bg-[#06234f] px-4 py-2 text-blue-300 transition-all hover:bg-[#06234f]/60"
+              >
+                Discard
+              </button>
+            </div>
+          )}
+
+          {/* Name */}
+          <div
+            className={`relative rounded-xl p-3 ${
+              theme === "dark" ? "bg-[#06234f]/60" : "bg-gray-100"
+            }`}
+          >
+            <label className="block text-start text-sm text-blue-300/70">
+              Your Name
+            </label>
+            <div className="flex items-center">
+              {isEditingName ? (
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-lg border border-blue-900/30 bg-[#020818] px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              ) : (
+                <span className="w-full px-3 py-2">{user?.fullName || name}</span>
+              )}
+
+              {isEditingName ? (
+                <>
+                  <button onClick={() => handleSave("name")} className="ml-2 cursor-pointer focus:outline-none">
+                    <FaCheck className="h-5 w-5 text-blue-400" />
+                  </button>
+                  <button onClick={() => setShowNameEmoji(!showNameEmoji)} className="ml-2 focus:outline-none cursor-pointer">
+                    <FaSmile className="h-5 w-5 text-yellow-400" />
+                  </button>
+                  <button
+                    onClick={() => { setIsEditingName(false); setShowNameEmoji(false); }}
+                    className="ml-2 focus:outline-none cursor-pointer"
+                  >
+                    <MdCancel className="h-5 w-5 text-gray-500" />
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setIsEditingName(!isEditingName)} className="ml-2 focus:outline-none cursor-pointer">
+                  <FaPencilAlt className="h-5 w-5 text-blue-400" />
+                </button>
+              )}
             </div>
 
-            {preview && (
-              <div className="mt-4 flex justify-center gap-4">
-                <button
-                  onClick={() => {
-                    handleSave("profile");
-                  }}
-                  className="cursor-pointer rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-                >
-                  {isLoading ? "Saving..." : "Change"}
-                </button>
-                <button
-                  onClick={() => {
-                    setProfilePicture(null);
-                    setPreview(null);
-                  }}
-                  className="cursor-pointer rounded bg-gray-400 px-4 py-2 text-white hover:bg-gray-500"
-                >
-                  Discard
-                </button>
+            {showNameEmoji && (
+              <div className="absolute -top-80 z-10">
+                <EmojiPicker onEmojiClick={(emoji) => handleEmojiSelect(emoji, "name")} />
               </div>
             )}
+          </div>
 
-            {/* Name */}
-            <div className="relative rounded-lg bg-gray-800 p-4 shadow-sm">
-              <label
-                htmlFor="name"
-                className="block text-start text-sm text-gray-500"
-              >
-                Your Name
-              </label>
-              <div className="flex items-center">
-                {isEditingName ? (
-                  <input
-                    type="text"
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-md border bg-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  />
-                ) : (
-                  <span className="w-full px-3 py-2">
-                    {user?.fullName || name}
-                  </span>
-                )}
+          {/* About */}
+          <div
+            className={`relative rounded-xl p-3  ${
+              theme === "dark" ? "bg-[#06234f]/60" : "bg-gray-100"
+            }`}
+          >
+            <label className="block text-start text-sm text-blue-300/70">
+              About
+            </label>
+            <div className="flex items-center">
+              {isEditingAbout ? (
+                <input
+                  type="text"
+                  id="about"
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  className="w-full rounded-lg border border-blue-900/30 bg-[#020818] px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              ) : (
+                <span className="w-full px-3 py-2">
+                  {user?.about || "Hey there, I am using Tether"}
+                </span>
+              )}
 
-                {isEditingName ? (
-                  <>
-                    <button
-                      onClick={() => handleSave("name")}
-                      className="ml-2 focus:outline-none"
-                    >
-                      <FaCheck className="h-5 w-5 text-green-500" />
-                    </button>
-                    <button
-                      onClick={() => setShowNameEmoji(!showNameEmoji)}
-                      className="ml-2 focus:outline-none"
-                    >
-                      <FaSmile className="h-5 w-5 text-yellow-500" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsEditingName(false);
-                        setShowNameEmoji(false);
-                      }}
-                      className="ml-2 focus:outline-none"
-                    >
-                      <MdCancel className="h-5 w-5 text-gray-500" />
-                    </button>
-                  </>
-                ) : (
+              {isEditingAbout ? (
+                <>
+                  <button onClick={() => handleSave("about")} className="ml-2 focus:outline-none">
+                    <FaCheck className="h-5 w-5 text-blue-400 cursor-pointer" />
+                  </button>
+                  <button onClick={() => setShowAboutEmoji(!showAboutEmoji)} className="ml-2 focus:outline-none">
+                    <FaSmile className="h-5 w-5 text-yellow-400 cursor-pointer" />
+                  </button>
                   <button
-                    onClick={() => setIsEditingName(!isEditingName)}
+                    onClick={() => { setIsEditingAbout(false); setShowAboutEmoji(false); }}
                     className="ml-2 focus:outline-none"
                   >
-                    <FaPencilAlt className="h-5 w-5 text-gray-500" />
+                    <MdCancel className="h-5 w-5 text-gray-500 cursor-pointer" />
                   </button>
-                )}
-              </div>
-
-              {showNameEmoji && (
-                <div className="absolute -top-80 z-10">
-                  <EmojiPicker
-                    onEmojiClick={(emoji) => handleEmojiSelect(emoji, "name")}
-                  />
-                </div>
+                </>
+              ) : (
+                <button onClick={() => setIsEditingAbout(!isEditingAbout)} className="ml-2 focus:outline-none">
+                  <FaPencilAlt className="h-5 w-5 text-blue-400 cursor-pointer" />
+                </button>
               )}
             </div>
 
-            {/* About */}
-            <div className="relative rounded-lg bg-gray-800 p-4 shadow-sm">
-              <label
-                htmlFor="about"
-                className="block text-start text-sm text-gray-500"
-              >
-                About
-              </label>
-              <div className="flex items-center">
-                {isEditingAbout ? (
-                  <input
-                    type="text"
-                    id="about"
-                    value={about}
-                    onChange={(e) => setAbout(e.target.value)}
-                    className="w-full rounded-md border bg-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  />
-                ) : (
-                  <span className="w-full px-3 py-2">
-                    {user?.about || "Hey there, I am using Tether"}
-                  </span>
-                )}
-
-                {isEditingAbout ? (
-                  <>
-                    <button
-                      onClick={() => handleSave("about")}
-                      className="ml-2 focus:outline-none"
-                    >
-                      <FaCheck className="h-5 w-5 text-green-500" />
-                    </button>
-                    <button
-                      onClick={() => setShowAboutEmoji(!showAboutEmoji)}
-                      className="ml-2 focus:outline-none"
-                    >
-                      <FaSmile className="h-5 w-5 text-yellow-500" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsEditingAbout(false);
-                        setShowAboutEmoji(false);
-                      }}
-                      className="ml-2 focus:outline-none"
-                    >
-                      <MdCancel className="h-5 w-5 text-gray-500" />
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setIsEditingAbout(!isEditingAbout)}
-                    className="ml-2 focus:outline-none"
-                  >
-                    <FaPencilAlt className="h-5 w-5 text-gray-500" />
-                  </button>
-                )}
+            {showAboutEmoji && (
+              <div className="absolute -top-80 z-10">
+                <EmojiPicker onEmojiClick={(emoji) => handleEmojiSelect(emoji, "about")} />
               </div>
-
-              {showAboutEmoji && (
-                <div className="absolute -top-80 z-10">
-                  <EmojiPicker
-                    onEmojiClick={(emoji) => handleEmojiSelect(emoji, "about")}
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      </motion.div>
-    </Layout>
-  );
+      </div>
+    </motion.div>
+  </Layout>
+);
 };
 
 export default UserDetails;

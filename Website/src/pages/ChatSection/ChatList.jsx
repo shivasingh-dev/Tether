@@ -93,11 +93,11 @@ const ChatList = () => {
                     alt="profile"
                   />
                 ) : (
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-full border border-blue-500/20 ${theme === "dark" ? "bg-[#06234f] text-blue-400" : "bg-gray-200 text-gray-500"}`}
-                  >
-                    <CircleUser size={28} />
-                  </div>
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+                  <span className="text-xl font-bold text-blue-400">
+                    {chat?.user?.fullName?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
                 )}
               </div>
 
