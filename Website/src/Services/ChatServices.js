@@ -23,7 +23,7 @@ export const initializeSocket = () => {
   // connected events of socket
 
   socket.on("connect", () => {
-    console.log("socket connected", socket.id);
+    // console.log("socket connected", socket.id);
     if (user?._id) socket.emit("user_connected", user._id);
   });
 
@@ -33,7 +33,7 @@ export const initializeSocket = () => {
 
   // disconnected event
   socket.on("disconnect", (reason) => {
-    console.log("socket disconnected", reason);
+    // console.log("socket disconnected", reason);
   });
 
   return socket;

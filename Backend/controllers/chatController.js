@@ -214,23 +214,6 @@ export const markAsRead = async (req, res) => {
       { $set: { messageStatus: "read" } },
     );
 
-    // emit socket event for notify to original sender
-
-    // socket server already handle kar raha hai isliye comment out hai
-    // if (req.io && req.socketUserMap) {
-    //   for (const message of messages) {
-    //     const senderSocketId = req.socketUserMap.get(message?.sender?.toString())
-    //     if (senderSocketId) {
-    //       const updatedMessage = {
-    //         _id: message._id,
-    //         messageStatus: "read",
-    //       }
-    //       req.io.to(senderSocketId).emit("message_status_update", updatedMessage)
-    //       await message.save()
-    //     }
-    //   }
-    // }
-
     return res.status(200).json({
       success: true,
       message: "Messages mark as read",
@@ -263,15 +246,13 @@ export const deleteMessage = async (req, res) => {
     }
     await messageModel.findByIdAndDelete(messageId);
 
-    // emit socket event
+    // emit socket event to receiver in real-time
 
-    if (req.io && req.socketUserMap) {
-      const receiverSocketId = req.socketUserMap.get(
-        message?.receiver?.toString(),
-      );
-      if (receiverSocketId) {
+    if (req.io) {
+      const receiverId = message?.receiver?.toString();
+      if (receiverId) {
         req.io
-          .to(receiverSocketId)
+          .to(receiverId)
           .emit("message_deleted", { deletedMessageId: messageId });
       }
     }

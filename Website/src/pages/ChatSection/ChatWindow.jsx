@@ -21,6 +21,9 @@ import {
 import MessageBubble from "./MessageBubble";
 import { SmilePlus } from "lucide-react";
 import { IoMdSend } from "react-icons/io";
+import { getSocket } from "../../Services/ChatServices";
+import VideoCallManager from "../VideoCall/VideoCallManager";
+import useCallStore from "../../Store/useCallStore";
 
 const isValidate = (date) => {
   return date instanceof Date && !isNaN(date);
@@ -37,6 +40,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
   const { user } = useUserStore();
+  const { socket } = getSocket();
 
   const {
     messages,
@@ -62,29 +66,30 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   // get online status and last seen
   const receiverId = selectedContact?.user?._id || selectedContact?._id;
   const storeOnline = isUserOnline(receiverId);
-  const online = useChatStore.getState().onlineUsers.has(receiverId) 
-                 ? storeOnline 
-                 : selectedContact?.user?.isOnline;
-                 
+  const online = useChatStore.getState().onlineUsers.has(receiverId)
+    ? storeOnline
+    : selectedContact?.user?.isOnline;
+
   const storeLastSeen = getUserLastSeen(receiverId);
   const lastSeen = storeLastSeen || selectedContact?.user?.lastSeen;
 
   const isTyping = isUserTyping(receiverId);
 
   useEffect(() => {
-    const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
+    const convId =
+      selectedContact?.conversationId || selectedContact?.conversation?._id;
     if (convId) {
       setCurrentConversation(convId);
       fetchMessages(convId);
     }
   }, [selectedContact, setCurrentConversation]);
 
-  useEffect(() => {;
+  useEffect(() => {
     initSocketListeners();
-    return () => {  
-    // set({ messages: [], currentConversation: null });
-    resetChatState();
-  };
+    return () => {
+      // set({ messages: [], currentConversation: null });
+      resetChatState();
+    };
   }, []);
 
   const scrollToBottom = () => {
@@ -127,9 +132,9 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
   const handleSendMessage = async () => {
     if (!selectedContact || !user?._id) {
-      console.error('Sender or Contact missing')
-      return
-    };
+      console.error("Sender or Contact missing");
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -172,8 +177,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     }
 
     return (
-      <div className="flex justify-center my-4">
-        <span className="px-4 py-1.5 rounded-full text-xs font-medium text-blue-300/60 bg-[#06234f]/60 border border-blue-900/30">
+      <div className="my-4 flex justify-center">
+        <span className="rounded-full border border-blue-900/30 bg-[#06234f]/60 px-4 py-1.5 text-xs font-medium text-blue-300/60">
           {dateString}
         </span>
       </div>
@@ -181,20 +186,21 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   };
 
   // Group message
-  const groupedMessages = Array.isArray(messages) ? messages.reduce((acc, message) => {
-      if (!message.createdAt) return acc;
-      const date = new Date(message.createdAt);
-      if (isValidate(date)) {
-        const dateString = format(date, "yyyy-MM-dd");
-        if (!acc[dateString]) {
-          acc[dateString] = [];
+  const groupedMessages = Array.isArray(messages)
+    ? messages.reduce((acc, message) => {
+        if (!message.createdAt) return acc;
+        const date = new Date(message.createdAt);
+        if (isValidate(date)) {
+          const dateString = format(date, "yyyy-MM-dd");
+          if (!acc[dateString]) {
+            acc[dateString] = [];
+          }
+          acc[dateString].push(message);
+        } else {
+          console.error("Invalid date for message", message);
         }
-        acc[dateString].push(message);
-      } else {
-        console.error("Invalid date for message", message);
-      }
-      return acc;
-    }, {})
+        return acc;
+      }, {})
     : {};
 
   const handleReaction = (messageId, emoji) => {
@@ -203,36 +209,36 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
   if (!selectedContact) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#020818] h-screen text-center relative overflow-hidden">
+      <div className="relative flex h-screen flex-1 flex-col items-center justify-center overflow-hidden bg-[#020818] text-center">
         {/* Background Decor - Subtle Glow to match the theme */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="pointer-events-none absolute top-1/2 left-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/5 blur-[120px]" />
 
-        <div className="max-w-md z-10 flex flex-col items-center px-6">
+        <div className="z-10 flex max-w-md flex-col items-center px-6">
           {/* Illustration Container */}
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-linear-to-r from-[#60a5fa] to-[#a78bfa] rounded-full blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+          <div className="group relative">
+            <div className="absolute -inset-1 rounded-full bg-linear-to-r from-[#60a5fa] to-[#a78bfa] opacity-10 blur transition duration-1000 group-hover:opacity-20"></div>
             <img
               src={ChatRightPhoto}
-              className="w-100 h-auto mb-8 opacity-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+              className="mb-8 h-auto w-100 opacity-90 drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]"
               alt="Welcome"
             />
           </div>
 
           {/* Heading with Brand Gradient */}
-          <h2 className="text-4xl font-bold bg-linear-to-r from-[#60a5fa] via-[#22d3ee] to-[#a78bfa] bg-clip-text text-transparent tracking-tight mb-3">
+          <h2 className="mb-3 bg-linear-to-r from-[#60a5fa] via-[#22d3ee] to-[#a78bfa] bg-clip-text text-4xl font-bold tracking-tight text-transparent">
             Welcome to Tether
           </h2>
 
           {/* Subtext with better color matching */}
-          <p className="text-blue-300/50 text-lg font-light leading-relaxed">
+          <p className="text-lg leading-relaxed font-light text-blue-300/50">
             Select a contact from the list to <br />
             start a secure conversation.
           </p>
 
           {/* Encryption Badge - Styled to look like a chip */}
-          <div className="mt-7 flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/5 border border-blue-500/10 backdrop-blur-sm">
-            <FaLock className="text-blue-400/40 text-xs" />
-            <span className="text-xs text-blue-400/40 uppercase tracking-widest font-semibold">
+          <div className="mt-7 flex items-center gap-2 rounded-full border border-blue-500/10 bg-blue-500/5 px-4 py-2 backdrop-blur-sm">
+            <FaLock className="text-xs text-blue-400/40" />
+            <span className="text-xs font-semibold tracking-widest text-blue-400/40 uppercase">
               End-to-End Encrypted
             </span>
           </div>
@@ -241,243 +247,255 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     );
   }
 
+  const handleVideoCall = () => {
+    if (selectedContact && online) {
+      const { initiateCall } = useCallStore.getState();
+
+      const avatar = selectedContact?.profilePicture;
+      initiateCall(
+        selectedContact?._id,
+        selectedContact?.fullName,
+        avatar,
+        "video",
+      );
+    } else {
+      alert("User is offline, can not initiate the call");
+    }
+  };
+
   return (
-    <div className="flex-1 h-screen w-full flex flex-col bg-[#020818]" >
-
-      {/*  Header  */}
-      <div className="px-4 py-2.75 bg-[#020818]  border-blue-900/30 flex items-center gap-3 shadow-[0_4px_24px_rgba(0,0,255,0.08)]">
-        {/* Back button */}
-        <button
-          onClick={() => {
-            setSelectedContact(null)
-            setCurrentConversation(null)
-          }}
-          className="p-2 rounded-full text-blue-400 hover:bg-blue-900/30 transition-colors cursor-pointer"
-        >
-          <FaArrowLeft size={19} />
-        </button>
-
-        {/* Avatar */}
-        {selectedContact?.user?.profilePicture ? (
-          <img
-            src={selectedContact.user.profilePicture}
-            className="w-10 h-10 rounded-full object-cover border border-blue-500/20 shrink-0"
-            alt="profile"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-[#06234f] border border-blue-500/20 flex items-center justify-center shrink-0">
-            <span className="text-blue-400 text-sm font-semibold">
-              {(selectedContact?.user?.fullName ||
-                selectedContact?.fullName ||
-                "?")[0].toUpperCase()}
-            </span>
-          </div>
-        )}
-
-        {/* Profile */}
-        <div className="flex-1 min-w-0">
-          <h2 className="text-[15px] font-semibold text-blue-50 truncate leading-tight">
-            {selectedContact?.user?.fullName || selectedContact?.fullName}
-          </h2>
-          <p className="text-[12px] leading-tight mt-0.5">
-            {isTyping ? (
-              <span className="text-green-400">Typing...</span>
-            ) : online ? (
-              <span className="text-green-400">Online</span>
-            ) : lastSeen ? (
-              <span className="text-blue-300/50">
-                Last seen {format(new Date(lastSeen), "HH:mm")}
-              </span>
-            ) : (
-              <span className="text-blue-300/50">Offline</span>
-            )}
-          </p>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <button className="p-2 rounded-full text-blue-400 hover:bg-blue-900/30 transition-colors cursor-pointer">
-            <FaVideo size={17} />
+    <>
+      <div className="flex h-screen w-full flex-1 flex-col bg-[#020818]">
+        {/*  Header  */}
+        <div className="flex items-center gap-3 border-blue-900/30 bg-[#020818] px-4 py-2.75 shadow-[0_4px_24px_rgba(0,0,255,0.08)]">
+          {/* Back button */}
+          <button
+            onClick={() => {
+              setSelectedContact(null);
+              setCurrentConversation(null);
+            }}
+            className="cursor-pointer rounded-full p-2 text-blue-400 transition-colors hover:bg-blue-900/30"
+          >
+            <FaArrowLeft size={19} />
           </button>
-          <button className="p-2 rounded-full text-blue-400 hover:bg-blue-900/30 transition-colors cursor-pointer">
-            <FaEllipsisV size={16} />
-          </button>
-        </div>
-      </div>
 
-      {/*  Messages Area */}
-      <div
-        className="flex-1 overflow-y-auto sidebar-scrollbar px-4 py-3 space-y-1"
-        style={{
-          background:
-            "radial-gradient(ellipse at top, #040f2e 0%, #020818 70%)",
-        }}
-      >
-        {Object.entries(groupedMessages).map(([date, msgs]) => (
-          <React.Fragment key={date}>
-            {renderDateSeparator(new Date(date))}
-            {msgs
-              .filter((msg) => {
-                const msgConvId =
-                  msg.conversation?._id?.toString() ||
-                  msg.conversation?.toString();
-                const currentConvId =
-                  selectedContact?.conversationId?.toString() ||
-                  selectedContact?.conversation?._id?.toString();
-                return msgConvId === currentConvId;
-              })
-              .map((msg) => (
-                <MessageBubble
-                  key={msg?._id || msg?.tempId}
-                  message={msg}
-                  currentUser={user}
-                  onReact={handleReaction}
-                  deleteMessage={deleteMessage}
-                />
-              ))}
-          </React.Fragment>
-        ))}
-        <div ref={messageEndRef} />
-      </div>
-
-      {/*  File Preview  */}
-      {filePreview && (
-        <div className="relative px-4 py-2 bg-[#020818] border-t border-blue-900/30">
-          <div className="relative w-fit mx-auto">
-            {selectedFile?.type.startsWith("video/") ? (
-              <video 
-                src={filePreview}
-                controls
-                className="w-80 object-cover rounded shadow-lg mx-auto"
-              />
-            ) : (
-              <img
-              src={filePreview}
-              className="max-h-40 max-w-xs object-cover rounded-xl border border-blue-500/20"
-              alt="preview"
+          {/* Avatar */}
+          {selectedContact?.user?.profilePicture ? (
+            <img
+              src={selectedContact.user.profilePicture}
+              className="h-10 w-10 shrink-0 rounded-full border border-blue-500/20 object-cover"
+              alt="profile"
             />
-            )}
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+              <span className="text-sm font-semibold text-blue-400">
+                {(selectedContact?.user?.fullName ||
+                  selectedContact?.fullName ||
+                  "?")[0].toUpperCase()}
+              </span>
+            </div>
+          )}
+
+          {/* Profile */}
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-[15px] leading-tight font-semibold text-blue-50">
+              {selectedContact?.user?.fullName || selectedContact?.fullName}
+            </h2>
+            <p className="mt-0.5 text-[12px] leading-tight">
+              {isTyping ? (
+                <span className="text-green-400">Typing...</span>
+              ) : online ? (
+                <span className="text-green-400">Online</span>
+              ) : lastSeen ? (
+                <span className="text-blue-300/50">
+                  Last seen {format(new Date(lastSeen), "HH:mm")}
+                </span>
+              ) : (
+                <span className="text-blue-300/50">Offline</span>
+              )}
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => {
-                setFilePreview(null);
-                setSelectedFile(null);
-              }}
-              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+              onClick={handleVideoCall}
+              title={online ? "Start Video Call" : "User is offline"}
+              className="cursor-pointer rounded-full p-2 text-blue-400 transition-colors hover:bg-blue-900/30"
             >
-              <FaTimes size={10} />
+              <FaVideo size={17} />
+            </button>
+            <button className="cursor-pointer rounded-full p-2 text-blue-400 transition-colors hover:bg-blue-900/30">
+              <FaEllipsisV size={16} />
             </button>
           </div>
         </div>
-      )}
 
-      {/*  Bottom Bar  */}
-      <div
-        className="
-        px-4 py-0.5 mb-3 flex items-center relative
-        bg-[#0a1a3a] transition-all duration-300
-        border rounded-full w-[95%] mx-auto border-blue-900/20
-        shadow-none hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)]
-        hover:-translate-y-0.5 focus-within:border-blue-400 
-        focus-within:ring-1 focus-within:ring-blue-500 
-        focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)]"
-      >
-        {/* Attachment button + menu */}
-        <div className="relative shrink-0">
-          <button
-            onClick={() => setShowFileMenu(!showFileMenu)}
-            className="p-2 rounded-full text-blue-400/70 hover:text-blue-300 hover:bg-blue-900/30 transition-colors cursor-pointer"
-          >
-            <FaPaperclip size={19} />
-          </button>
-
-          {showFileMenu && (
-            <div className="absolute bottom-full left-0 mb-2 bg-[#06234f] border border-blue-900/40 rounded-xl shadow-xl overflow-hidden min-w-40">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,video/*"
-                className="hidden"
-              />
-              <button
-                onClick={() => {
-                  fileInputRef.current.click();
-                  setShowFileMenu(false);
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-blue-200 hover:bg-blue-800/40 transition-colors"
-              >
-                <FaImage size={14} className="text-blue-400" />
-                Image / Video
-              </button>
-              <div className="border-t border-blue-900/30" />
-              <button
-                onClick={() => {
-                  fileInputRef.current.click();
-                  setShowFileMenu(false);
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-blue-200 hover:bg-blue-800/40 transition-colors"
-              >
-                <FaFile size={13} className="text-blue-400" />
-                Documents
-              </button>
-            </div>
-          )}
+        {/*  Messages Area */}
+        <div
+          className="sidebar-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-3"
+          style={{
+            background:
+              "radial-gradient(ellipse at top, #040f2e 0%, #020818 70%)",
+          }}
+        >
+          {Object.entries(groupedMessages).map(([date, msgs]) => (
+            <React.Fragment key={date}>
+              {renderDateSeparator(new Date(date))}
+              {msgs
+                .filter((msg) => {
+                  const msgConvId =
+                    msg.conversation?._id?.toString() ||
+                    msg.conversation?.toString();
+                  const currentConvId =
+                    selectedContact?.conversationId?.toString() ||
+                    selectedContact?.conversation?._id?.toString();
+                  return msgConvId === currentConvId;
+                })
+                .map((msg) => (
+                  <MessageBubble
+                    key={msg?._id || msg?.tempId}
+                    message={msg}
+                    currentUser={user}
+                    onReact={handleReaction}
+                    deleteMessage={deleteMessage}
+                  />
+                ))}
+            </React.Fragment>
+          ))}
+          <div ref={messageEndRef} />
         </div>
 
-        {/* Emoji button */}
-        <button
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="p-2 rounded-full text-blue-400/70 hover:text-blue-300 hover:bg-blue-900/30 transition-colors cursor-pointer shrink-0"
-        >
-          <SmilePlus size={19} />
-        </button>
-
-        {/* Emoji picker */}
-        {showEmojiPicker && (
-          <div ref={emojiPickerRef} className="absolute left-4 bottom-16 z-50">
-            <EmojiPicker
-              onEmojiClick={(emojiObject) => {
-                setMessage((prev) => prev + emojiObject.emoji);
-                setShowEmojiPicker(false);
-              }}
-              theme="dark"
-            />
+        {/*  File Preview  */}
+        {filePreview && (
+          <div className="relative border-t border-blue-900/30 bg-[#020818] px-4 py-2">
+            <div className="relative mx-auto w-fit">
+              {selectedFile?.type.startsWith("video/") ? (
+                <video
+                  src={filePreview}
+                  controls
+                  className="mx-auto w-80 rounded object-cover shadow-lg"
+                />
+              ) : (
+                <img
+                  src={filePreview}
+                  className="max-h-40 max-w-xs rounded-xl border border-blue-500/20 object-cover"
+                  alt="preview"
+                />
+              )}
+              <button
+                onClick={() => {
+                  setFilePreview(null);
+                  setSelectedFile(null);
+                }}
+                className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600"
+              >
+                <FaTimes size={10} />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Text input */}
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && message.trim()) {
-              handleSendMessage()
-            }
-          }}
-          placeholder="Type a message"
-          className="flex-1 px-2 py-2.5 rounded-full 
-          min-w-0 sm:px-4
-          text-white text-[14px] 
-          placeholder:text-blue-400
-          outline-none transition-all "
-        />
+        {/*  Bottom Bar  */}
+        <div className="relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)]">
+          {/* Attachment button + menu */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowFileMenu(!showFileMenu)}
+              className="cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300"
+            >
+              <FaPaperclip size={19} />
+            </button>
 
-        {/* Send button */}
-        <button
-          disabled={!message.trim()}
-          onClick={handleSendMessage}
-          className={`
-          p-2 rounded-full transition-all shrink-0
-          ${!message.trim()
-              ? "bg-gray-600/50 cursor-not-allowed opacity-50"
-              : "bg-blue-600 hover:bg-blue-500 cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+            {showFileMenu && (
+              <div className="absolute bottom-full left-0 mb-2 min-w-40 overflow-hidden rounded-xl border border-blue-900/40 bg-[#06234f] shadow-xl">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*,video/*"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => {
+                    fileInputRef.current.click();
+                    setShowFileMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
+                >
+                  <FaImage size={14} className="text-blue-400" />
+                  Image / Video
+                </button>
+                <div className="border-t border-blue-900/30" />
+                <button
+                  onClick={() => {
+                    fileInputRef.current.click();
+                    setShowFileMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
+                >
+                  <FaFile size={13} className="text-blue-400" />
+                  Documents
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Emoji button */}
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="shrink-0 cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300"
+          >
+            <SmilePlus size={19} />
+          </button>
+
+          {/* Emoji picker */}
+          {showEmojiPicker && (
+            <div
+              ref={emojiPickerRef}
+              className="absolute bottom-16 left-4 z-50"
+            >
+              <EmojiPicker
+                onEmojiClick={(emojiObject) => {
+                  setMessage((prev) => prev + emojiObject.emoji);
+                  setShowEmojiPicker(false);
+                }}
+                theme="dark"
+              />
+            </div>
+          )}
+
+          {/* Text input */}
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && message.trim()) {
+                handleSendMessage();
+              }
+            }}
+            placeholder="Type a message"
+            className="min-w-0 flex-1 rounded-full px-2 py-2.5 text-[14px] text-white transition-all outline-none placeholder:text-blue-400 sm:px-4"
+          />
+
+          {/* Send button */}
+          <button
+            disabled={!message.trim()}
+            onClick={handleSendMessage}
+            className={`shrink-0 rounded-full p-2 transition-all ${
+              !message.trim()
+                ? "cursor-not-allowed bg-gray-600/50 opacity-50"
+                : "cursor-pointer bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95"
             }`}
-        >
-          <IoMdSend size={17} className="text-white" />
-        </button>
+          >
+            <IoMdSend size={17} className="text-white" />
+          </button>
+        </div>
       </div>
-    </div>
+
+      <VideoCallManager socket={socket} />
+    </>
   );
 };
 

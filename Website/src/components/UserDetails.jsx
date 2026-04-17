@@ -90,7 +90,7 @@ const UserDetails = () => {
           : "border-gray-200 bg-gray-100 text-black"
       }`}
     >
-      <div className="w-full rounded-lg p-6">
+      <div className="w-full rounded-lg p-6 overflow-y-auto">
         <div className="mb-6 flex items-center">
           <h1 className="text-2xl font-bold">Profile</h1>
         </div>
