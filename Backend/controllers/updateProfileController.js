@@ -29,9 +29,10 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("error in update profiel", error);
+    import('fs').then(fs => fs.appendFileSync('error.log', '\nUPDATE PROFILE ERROR:\n' + error.stack + '\n'));
     return res
       .status(500)
-      .json({ success: false, message: "Internal server error" });
+      .json({ success: false, message: error.message || "Internal server error" });
   }
 };
 

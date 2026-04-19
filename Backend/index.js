@@ -21,11 +21,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// const corsOption = {
-//   origin: process.env.FRONTENDURL,
-//   credentials: true
-// }
-
 const corsOption = {
   // Mobile testing ke liye '*' ya specific IP allow karna zaruri hai
   origin: true, 

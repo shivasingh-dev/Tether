@@ -24,6 +24,13 @@ import { IoMdSend } from "react-icons/io";
 import { getSocket } from "../../Services/ChatServices";
 import VideoCallManager from "../VideoCall/VideoCallManager";
 import useCallStore from "../../Store/useCallStore";
+import {
+  FILE_SIZE_LIMITS,
+  ALLOWED_FILE_TYPES,
+  formatFileSize,
+  validateFile,
+} from "../../Utils/FileConfig";
+import { toast } from "react-toastify";
 
 const isValidate = (date) => {
   return date instanceof Date && !isNaN(date);
@@ -87,7 +94,6 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   useEffect(() => {
     initSocketListeners();
     return () => {
-      // set({ messages: [], currentConversation: null });
       resetChatState();
     };
   }, []);
@@ -120,14 +126,26 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   }, [message, selectedContact, startTyping, stopTyping]);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setShowFileMenu(false);
-      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-        setFilePreview(URL.createObjectURL(file));
-      }
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    // Validate file
+    const validation = validateFile(file);
+
+    if (!validation.valid) {
+      toast.error(validation.error);
+      e.target.value = ""; // Reset input
+      return;
     }
+
+    // File is valid
+    setSelectedFile(file);
+    setShowFileMenu(false);
+    setFilePreview(URL.createObjectURL(file));
+
+    // Reset for selecting same file again
+    e.target.value = "";
   };
 
   const handleSendMessage = async () => {
@@ -135,6 +153,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       console.error("Sender or Contact missing");
       return;
     }
+
+    if (!message.trim() && !selectedFile) return;
 
     try {
       const formData = new FormData();
@@ -383,10 +403,34 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                   alt="preview"
                 />
               )}
+
+              {/* File Info - Name & Size */}
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#06234f]/60 px-3 py-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  {selectedFile?.type.startsWith("video/") ? (
+                    <span className="text-lg">🎥</span>
+                  ) : (
+                    <span className="text-lg">🖼️</span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-blue-200">
+                      {selectedFile?.name}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      {formatFileSize(selectedFile?.size)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
               <button
                 onClick={() => {
                   setFilePreview(null);
                   setSelectedFile(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
                 }}
                 className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600"
               >
@@ -400,6 +444,13 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
         <div className="relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)]">
           {/* Attachment button + menu */}
           <div className="relative shrink-0">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*,video/*"
+              className="hidden"
+            />
             <button
               onClick={() => setShowFileMenu(!showFileMenu)}
               className="cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300"
@@ -409,16 +460,12 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
             {showFileMenu && (
               <div className="absolute bottom-full left-0 mb-2 min-w-40 overflow-hidden rounded-xl border border-blue-900/40 bg-[#06234f] shadow-xl">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*,video/*"
-                  className="hidden"
-                />
                 <button
                   onClick={() => {
-                    fileInputRef.current.click();
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                      fileInputRef.current.click();
+                    }
                     setShowFileMenu(false);
                   }}
                   className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
@@ -471,7 +518,11 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && message.trim()) {
+              if (e.key === "Enter") {
+                if (!message.trim() && !selectedFile) {
+                  toast.warn("Khali message send nahi ho sakta!");
+                  return;
+                }
                 handleSendMessage();
               }
             }}
@@ -481,12 +532,19 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
           {/* Send button */}
           <button
-            disabled={!message.trim()}
-            onClick={handleSendMessage}
+            onClick={() => {
+              const isMessageEmpty = !message.trim();
+              const isFileEmpty = !selectedFile;
+              if (isMessageEmpty && isFileEmpty) {
+                toast.warn("👀 Blank messages? That's not how this works!");
+                return;
+              }
+              handleSendMessage();
+            }}
             className={`shrink-0 rounded-full p-2 transition-all ${
-              !message.trim()
-                ? "cursor-not-allowed bg-gray-600/50 opacity-50"
-                : "cursor-pointer bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 active:scale-95"
+              !message.trim() && !selectedFile
+                ? "bg-gray-600/50 opacity-50"
+                : "cursor-pointer bg-blue-600 hover:bg-blue-500"
             }`}
           >
             <IoMdSend size={17} className="text-white" />

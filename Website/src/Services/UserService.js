@@ -12,7 +12,7 @@ export const loginWithEmail = async (email, password) => {
 
 export const updateUserProfile = async (updateData) => {
   try {
-    const response = await axiosInstance.post('/update-profile', { updateData })
+    const response = await axiosInstance.put('/update/profile', updateData)
     return response.data
   } catch (error) {
     throw error?.response?.data || { message: error.message }

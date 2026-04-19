@@ -144,6 +144,7 @@ export const getConversation = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getConversation", error);
+    import('fs').then(fs => fs.appendFileSync('error.log', '\nGET CONVERSATION ERROR:\n' + error.stack + '\n'));
     return res
       .status(500)
       .json({ success: false, message: "Internal server error" });

@@ -1,7 +1,8 @@
 import multer from "multer";
 import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
-import cloudinary from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 
 dotenv.config();
 
@@ -21,8 +22,10 @@ export const uploadFileToCloudinary = (file) => {
       ? cloudinary.uploader.upload_large
       : cloudinary.uploader.upload;
 
-    uploader(file.path, options, (error, result) => {
-      fs.unlink(file.path, () => {})
+    const absolutePath = path.resolve(file.path);
+
+    uploader(absolutePath, options, (error, result) => {
+      fs.unlink(absolutePath, () => {})
       if (error) {
         return reject(error)
       }

@@ -40,7 +40,7 @@ const UserDetails = () => {
     }
   };
 
-  const handleSave = (field) => {
+  const handleSave = async (field) => {
     try {
       setIsLoading(true);
       const formData = new FormData();
@@ -55,18 +55,19 @@ const UserDetails = () => {
       }
 
       if (profilePicture && field === "profile") {
-        formData.append("media", profilePicture);
+        formData.append("profilePicture", profilePicture);
       }
 
-      const updated = updateUserProfile(formData);
+      const updated = await updateUserProfile(formData);
       setUser(updated?.data);
       setProfilePicture(null);
       setPreview(null);
       toast.success("Profile Updated");
-      setIsLoading(false);
     } catch (error) {
       console.error("Error in profie updated", error);
-      toast.error("Failed to update profile");
+      toast.error(error.message || "Failed to update profile");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,9 +100,9 @@ const UserDetails = () => {
           {/* Avatar */}
           <div className="flex flex-col items-center">
             <div className="group relative">
-              {user?.profilePicture ? (
+              {preview || user?.profilePicture ? (
                 <img
-                  src={user.profilePicture}
+                  src={preview || user?.profilePicture}
                   alt="profile photo"
                   className="mb-2 h-32 w-32 rounded-full object-cover border border-blue-500/20"
                 />
@@ -159,7 +160,7 @@ const UserDetails = () => {
             }`}
           >
             <label className="block text-start text-sm text-blue-300/70">
-              Your Name
+              Full Name
             </label>
             <div className="flex items-center">
               {isEditingName ? (

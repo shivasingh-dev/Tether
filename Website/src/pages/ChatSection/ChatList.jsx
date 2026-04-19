@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import useLayoutStore from "../../Store/useLayoutStore.js";
 import useThemeStore from "../../Store/useThemeStore.js";
 import useUserStore from "../../Store/useUserStore.js";
-import { FolderPlus, Search, CircleUser } from "lucide-react";
+import { FolderPlus, Search } from "lucide-react";
 import { motion } from "motion/react";
 import formatTimestamp from "../../Utils/formatTime.js";
 import { useChatStore } from "../../Store/useChatStore.js";
@@ -95,7 +95,7 @@ const ChatList = () => {
                 ) : (
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
                   <span className="text-xl font-bold text-blue-400">
-                    {chat?.user?.fullName?.charAt(0).toUpperCase()}
+                    {chat?.user?.fullName?.charAt(0)?.toUpperCase() || '?'}
                   </span>
                 </div>
                 )}
