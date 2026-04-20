@@ -59,7 +59,7 @@ const UserDetails = () => {
       }
 
       const updated = await updateUserProfile(formData);
-      setUser(updated?.data);
+      setUser({ ...user, ...updated?.data });
       setProfilePicture(null);
       setPreview(null);
       toast.success("Profile Updated");

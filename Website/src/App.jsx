@@ -32,7 +32,7 @@ const App = () => {
       cleanUp();
       disconnectSocket();
     };
-  }, [user]);
+  }, [user?._id]);
 
   return (
     <>

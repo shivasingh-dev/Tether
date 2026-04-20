@@ -36,6 +36,29 @@ const isValidate = (date) => {
   return date instanceof Date && !isNaN(date);
 };
 
+const formatLastSeenTime = (dateInput) => {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (!isValidate(date)) return "";
+
+  const timeStr = format(date, "HH:mm");
+  
+  if (isToday(date)) {
+    return `today at ${timeStr}`;
+  } else if (isYesterday(date)) {
+    return `yesterday at ${timeStr}`;
+  } 
+  
+  const diffTime = Date.now() - date.getTime();
+  const diffDays = diffTime / (1000 * 60 * 60 * 24); 
+  
+  if (diffDays < 7) {
+    return `${format(date, "EEEE")} at ${timeStr}`;
+  } else {
+    return `${format(date, "d MMM")} at ${timeStr}`;
+  }
+};
+
 const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -287,6 +310,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     <>
       <div className="flex h-screen w-full flex-1 flex-col bg-[#020818]">
         {/*  Header  */}
+
         <div className="flex items-center gap-3 border-blue-900/30 bg-[#020818] px-4 py-2.75 shadow-[0_4px_24px_rgba(0,0,255,0.08)]">
           {/* Back button */}
           <button
@@ -328,7 +352,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                 <span className="text-green-400">Online</span>
               ) : lastSeen ? (
                 <span className="text-blue-300/50">
-                  Last seen {format(new Date(lastSeen), "HH:mm")}
+                  Last seen {formatLastSeenTime(lastSeen)}
                 </span>
               ) : (
                 <span className="text-blue-300/50">Offline</span>
