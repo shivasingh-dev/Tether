@@ -130,6 +130,18 @@ const MessageBubble = ({
             </div>
           )}
 
+          {/* Audio Content */}
+          {message.contentType === "audio" && (
+            <div className="relative pb-5">
+              {" "}
+              <audio
+                src={message.imageOrVideoUrl}
+                controls
+                className="rounded-xl max-w-xs outline-none"
+              />
+            </div>
+          )}
+
           {/*  Time + Status */}
           <div className="absolute bottom-1 right-2 flex items-center justify-end gap-1 pointer-events-none">
             <span

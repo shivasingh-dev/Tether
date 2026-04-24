@@ -15,6 +15,9 @@ const onlineUsers = new Map();
 
 const typingUsers = new Map();
 
+// map to store socket id -> source ("web" | "app")
+const socketSources = new Map();
+
 // main configuration
 
 export const initializeSocket = (server) => {
@@ -41,16 +44,49 @@ export const initializeSocket = (server) => {
 
     // handle user connection & mark them online in DB
 
-    socket.on("user_connected", async (connectingUserId) => {
+    socket.on("user_connected", async (data) => {
       try {
-        userId = connectingUserId;
+        let source = "unknown";
+        if (typeof data === "object" && data !== null) {
+          userId = data.userId;
+          source = data.source || "unknown";
+        } else {
+          userId = data;
+        }
 
-        // online user set mein multiple device add karo overrite nahi
+        // store source for this socket
+        socketSources.set(socket.id, source);
+
+        // online user set mein multiple device add karo
         if (!onlineUsers.has(userId)) {
           onlineUsers.set(userId, new Set());
         }
+
+        // ✅ PEHLE naya socket add karo — taaki handleDisconnected mein size 0 na ho
         onlineUsers.get(userId).add(socket.id);
-        socket.join(userId); // join personal room  for direct emit
+        socket.join(userId); // join personal room for direct emit
+
+        // Ab purane same-source sockets ko collect karo aur disconnect karo
+        const socketsToDisconnect = [];
+        const existingSockets = onlineUsers.get(userId);
+        existingSockets.forEach((sid) => {
+          if (sid === socket.id) return; // Skip the new socket
+          const existingSource = socketSources.get(sid);
+          if (existingSource === source && source !== "unknown") {
+            socketsToDisconnect.push(sid);
+          }
+        });
+
+        // Force logout aur disconnect — ab safely kar sakte hain kyunki naya socket already added hai
+        socketsToDisconnect.forEach((sid) => {
+          io.to(sid).emit("force_logout", { message: "Logged in from another device" });
+          const oldSocket = io.sockets.sockets.get(sid);
+          if (oldSocket) {
+            oldSocket.disconnect(true);
+          }
+          existingSockets.delete(sid);
+          socketSources.delete(sid);
+        });
 
         // update user status in db
         await userModel.findByIdAndUpdate(userId, {
@@ -226,6 +262,8 @@ export const initializeSocket = (server) => {
         if (userSockets) {
           userSockets.delete(socket.id);
         }
+        
+        socketSources.delete(socket.id);
 
         // clear all typing timeouts
         if (typingUsers.has(userId)) {
@@ -237,21 +275,25 @@ export const initializeSocket = (server) => {
           typingUsers.delete(userId);
         }
 
-        if (userSockets.size === 0) {
+        // ✅ Sirf tab offline karo jab SAARE sockets disconnect ho jayein
+        const remainingCount = userSockets ? userSockets.size : 0;
+        if (remainingCount === 0) {
           onlineUsers.delete(userId);
           await userModel.findByIdAndUpdate(userId, {
             isOnline: false,
             lastSeen: new Date(),
           });
+
+          // ✅ Offline status sirf tab broadcast karo jab koi socket nahi bacha
+          io.emit("user_status", {
+            userId,
+            isOnline: false,
+            lastSeen: new Date(),
+          });
         }
 
-        io.emit("user_status", {
-          userId,
-          isOnline: false,
-          lastSeen: new Date(),
-        });
-
-        (socket.leave(userId), console.log(`user ${userId} disconnected`));
+        socket.leave(userId);
+        console.log(`user ${userId} disconnected (remaining sockets: ${remainingCount})`);
       } catch (error) {
         console.error("Error in disconnection socket", error);
       }

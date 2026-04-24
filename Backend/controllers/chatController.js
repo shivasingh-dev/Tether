@@ -51,6 +51,8 @@ export const sendMessagge = async (req, res) => {
         contentType = "image";
       } else if (file.mimetype.startsWith("video")) {
         contentType = "video";
+      } else if (file.mimetype.startsWith("audio")) {
+        contentType = "audio";
       } else {
         return res
           .status(400)
@@ -105,6 +107,17 @@ export const sendMessagge = async (req, res) => {
         });
       }
       req.io.to(receiverId.toString()).emit("receive_message", populateMessage);
+
+      // Emit to sender's other devices so they sync real-time
+      const reqSocketId = req.headers['x-socket-id'];
+      if (reqSocketId) {
+        req.io.to(senderId.toString()).except(reqSocketId).emit("receive_message", populateMessage);
+      } else {
+        // Fallback if x-socket-id is somehow not provided (optional)
+        // We only want to emit to other devices. If no socket ID is provided, emitting to all might cause duplicate, 
+        // but the frontend handles deduplication.
+        req.io.to(senderId.toString()).emit("receive_message", populateMessage);
+      }
     }
     
     return res.status(200).json({
@@ -255,6 +268,14 @@ export const deleteMessage = async (req, res) => {
         req.io
           .to(receiverId)
           .emit("message_deleted", { deletedMessageId: messageId });
+      }
+
+      // emit to sender's other devices
+      const reqSocketId = req.headers['x-socket-id'];
+      if (reqSocketId) {
+        req.io.to(userId.toString()).except(reqSocketId).emit("message_deleted", { deletedMessageId: messageId });
+      } else {
+        req.io.to(userId.toString()).emit("message_deleted", { deletedMessageId: messageId });
       }
     }
 

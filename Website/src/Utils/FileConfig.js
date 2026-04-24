@@ -1,7 +1,7 @@
 export const FILE_SIZE_LIMITS = {
   IMAGE: {
-    MAX_SIZE: 1 * 1024 * 1024, // 1 MB
-    LABEL: '1 MB',
+    MAX_SIZE: 2 * 1024 * 1024, // 2 MB
+    LABEL: '2 MB',
     EMOJI: '🖼️'
   },
   VIDEO: {

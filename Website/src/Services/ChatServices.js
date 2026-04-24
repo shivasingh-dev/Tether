@@ -6,10 +6,14 @@ let socket = null;
 const apiUrl = `http://localhost:8000`;
 
 export const initializeSocket = () => {
-  if (socket) return socket;
+  if (socket && socket.connected) return socket;
 
-  
-  const user = useUserStore.getState().user;
+  // Purana disconnected socket cleanup karo
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
 
   const BACKEND_URL = apiUrl;
 
@@ -21,14 +25,25 @@ export const initializeSocket = () => {
   });
 
   // connected events of socket
-
+  // ✅ FIX: Har connect/reconnect par FRESH user data read karo (stale closure se bachne ke liye)
   socket.on("connect", () => {
-    // console.log("socket connected", socket.id);
-    if (user?._id) socket.emit("user_connected", user._id);
+    const user = useUserStore.getState().user;
+    if (user?._id) socket.emit("user_connected", { userId: user._id, source: "web" });
   });
 
   socket.on("connect_error", (error) => {
     console.error("Socket connection error", error);
+  });
+  
+  socket.on("force_logout", (data) => {
+    // Disconnect and nullify socket FIRST so re-login can create a fresh one
+    if (socket) {
+      socket.removeAllListeners();
+      socket.disconnect();
+      socket = null;
+    }
+    useUserStore.getState().clearUser();
+    alert("Session Expired: " + (data.message || "Logged in from another device"));
   });
 
   // disconnected event
@@ -41,7 +56,7 @@ export const initializeSocket = () => {
 
 
 export const getSocket = () => {
-  if (!socket) {
+  if (!socket || !socket.connected) {
     return initializeSocket()
   }
 
@@ -50,6 +65,7 @@ export const getSocket = () => {
 
 export const disconnectSocket = () => {
   if (socket) {
+    socket.removeAllListeners();
     socket.disconnect()
     socket = null
   }

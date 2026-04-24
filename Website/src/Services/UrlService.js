@@ -1,5 +1,6 @@
 import axios from 'axios'
 import useUserStore from '../Store/useUserStore';
+import { getSocket } from './ChatServices';
 
 const apiUrl = `http://localhost:8000/api/`
 
@@ -14,6 +15,12 @@ axiosInstance.interceptors.request.use((config) => {
   if (user?.token) {
     config.headers.Authorization = `Bearer ${user.token}`;
   }
+  
+  const socket = getSocket();
+  if (socket && socket.id) {
+    config.headers['x-socket-id'] = socket.id;
+  }
+  
   return config;
 });
 
