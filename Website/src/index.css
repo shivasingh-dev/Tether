@@ -10,6 +10,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+@custom-variant dark (&:is(.dark *));
+
 /* Global Resets */
 * {
   box-sizing: border-box;

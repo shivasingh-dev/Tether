@@ -11,6 +11,7 @@ import Settings from "./pages/SettingSection/Settings.jsx";
 import useUserStore from "./Store/useUserStore.js";
 import { disconnectSocket, initializeSocket } from "./Services/ChatServices.js";
 import { useChatStore } from "./Store/useChatStore.js";
+import { Toaster } from "@/components/ui/sonner"
 
 const App = () => {
   const { user } = useUserStore();
@@ -37,6 +38,7 @@ const App = () => {
   return (
     <>
       <ToastContainer />
+      <Toaster  />
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/welcome" element={<Welcome />} />

@@ -21,7 +21,8 @@ const messageSchema = new mongoose.Schema({
       emoji: String
     }
   ],
-  messageStatus: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' }
+  messageStatus: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
+  deletedFor: [{type: mongoose.Schema.Types.ObjectId, ref: "User"}]
 }, { timestamps: true });
 
 export const messageModel = mongoose.model('Message', messageSchema)

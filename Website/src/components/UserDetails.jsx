@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import useUserStore from "../Store/useUserStore";
 import { updateUserProfile } from "../Services/UserService";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import Layout from "../components/Layout";
 import { motion } from "motion/react";
 import { fadeIn } from "../Services/Animation";
@@ -9,6 +9,7 @@ import useThemeStore from "../Store/useThemeStore";
 import { FaCamera, FaCheck, FaPencilAlt, FaSmile } from "react-icons/fa";
 import { MdCancel } from "react-icons/md";
 import EmojiPicker from "emoji-picker-react";
+import { toast } from "sonner"
 
 const UserDetails = () => {
   const [name, setName] = useState("");
@@ -62,10 +63,10 @@ const UserDetails = () => {
       setUser({ ...user, ...updated?.data });
       setProfilePicture(null);
       setPreview(null);
-      toast.success("Profile Updated");
+      toast.success("Profile Updated", {position: "bottom-left"});
     } catch (error) {
       console.error("Error in profie updated", error);
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error.message || "Failed to update profile", {position: "top-right"});
     } finally {
       setIsLoading(false);
     }

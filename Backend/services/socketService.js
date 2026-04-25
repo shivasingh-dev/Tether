@@ -163,7 +163,7 @@ export const initializeSocket = (server) => {
       // auto stop after 3 seconds
       userTyping[`${conversationId}_timeout`] = setTimeout(() => {
         userTyping[conversationId] = false;
-        socket.to(receiverId).emit("user_typing", {
+        io.to(receiverId).emit("user_typing", {
           userId,
           conversationId,
           isTyping: false,
@@ -171,7 +171,7 @@ export const initializeSocket = (server) => {
       }, 3000);
 
       // Notify receiver
-      socket.to(receiverId).emit("user_typing", {
+      io.to(receiverId).emit("user_typing", {
         userId,
         conversationId,
         isTyping: true,
@@ -191,7 +191,7 @@ export const initializeSocket = (server) => {
         }
       }
 
-      socket.to(receiverId).emit("user_typing", {
+      io.to(receiverId).emit("user_typing", {
         userId,
         conversationId,
         isTyping: false,

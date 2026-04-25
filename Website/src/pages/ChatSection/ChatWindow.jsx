@@ -18,8 +18,9 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import MessageBubble from "./MessageBubble";
-import { SmilePlus } from "lucide-react";
+import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical } from "lucide-react";
 import { IoMdSend } from "react-icons/io";
+import { motion, AnimatePresence } from "framer-motion";
 import { getSocket } from "../../Services/ChatServices";
 import VideoCallManager from "../VideoCall/VideoCallManager";
 import useCallStore from "../../Store/useCallStore";
@@ -33,6 +34,7 @@ import { toast } from "react-toastify";
 
 // ─── ImageEditor import (same folder mein honi chahiye) ───────────
 import ImageEditor from "../../components/ImageEditor";
+import useOutsideClick from "../../hooks/useOutsideClick";
 
 // ================================================================
 //  Helper Functions
@@ -72,20 +74,26 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const [showEditor, setShowEditor]     = useState(false);
   const [editorImage, setEditorImage]   = useState(null);
 
+  // Action Modal
+  const [isActionOpen, setIsActionOpen] = useState(false)
+  const [confirmModal, setConfirmModal] = useState({ open: false, type: null });
+  const [isClearing, setIsClearing] = useState(false);
+
   const typingTimeoutRef = useRef(null);
   const messageEndRef    = useRef(null);
   const emojiPickerRef   = useRef(null);
   const fileInputRef     = useRef(null);
+  const actionMenuRef    = useRef(null);
+  const fileMenuRef      = useRef(null);
 
   const { user } = useUserStore();
-  const { socket } = getSocket();
 
   const {
     messages, loading, sendMessage, receiveMessage,
     fetchMessages, fetchConversations, conversations,
     setCurrentConversation, isUserTyping, startTyping, stopTyping,
     getUserLastSeen, isUserOnline, cleanUp, resetChatState,
-    addReactions, deleteMessage, initSocketListeners,
+    addReactions, deleteMessage, clearChat,
   } = useChatStore();
 
   // ── Online / Last Seen ──
@@ -104,9 +112,13 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   }, [selectedContact, setCurrentConversation]);
 
   useEffect(() => {
-    initSocketListeners();
     return () => { resetChatState(); };
   }, []);
+
+  // ── Outside Click Handlers ──
+  useOutsideClick(actionMenuRef, () => setIsActionOpen(false));
+  useOutsideClick(fileMenuRef,   () => setShowFileMenu(false));
+  useOutsideClick(emojiPickerRef, () => setShowEmojiPicker(false));
 
   const scrollToBottom = () => messageEndRef.current?.scrollIntoView({ behaviour: "smooth" });
   useEffect(() => { scrollToBottom(); }, [messages]);
@@ -332,6 +344,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
             </p>
           </div>
 
+         {/* Action buttons */}
           <div className="flex items-center gap-1">
             <button
               onClick={handleVideoCall}
@@ -340,9 +353,49 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
             >
               <FaVideo size={17} />
             </button>
-            <button className="cursor-pointer rounded-full p-2 text-blue-400 transition-colors hover:bg-blue-900/30">
-              <FaEllipsisV size={16} />
-            </button>
+            <div ref={actionMenuRef} className="relative">
+              <button
+                onClick={() => setIsActionOpen(!isActionOpen)}
+                className="relative cursor-pointer rounded-full p-2 text-blue-400 transition-colors hover:bg-blue-900/30"
+              >
+                <MoreVertical size={18} />
+              </button>
+
+              <AnimatePresence>
+                {isActionOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-blue-900/40 bg-[#06234f] p-1 shadow-2xl backdrop-blur-xl"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmModal({ open: true, type: "clear" });
+                        setIsActionOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
+                    >
+                      <Trash2 size={16} className="text-blue-400" />
+                      Clear Chat
+                    </button>
+                    <div className="mx-2 border-t border-blue-900/30" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmModal({ open: true, type: "block" });
+                        setIsActionOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10"
+                    >
+                      <UserX size={16} className="text-red-400" />
+                      Block User
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
@@ -429,7 +482,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
         <div className="relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)]">
 
           {/* Attachment button */}
-          <div className="relative shrink-0">
+          <div ref={fileMenuRef} className="relative shrink-0">
             <input
               type="file"
               ref={fileInputRef}
@@ -536,7 +589,85 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
         />
       )}
 
-      <VideoCallManager socket={socket} />
+      <VideoCallManager socket={getSocket()} />
+
+      {/* ── Confirmation Modal ── */}
+      <AnimatePresence>
+        {confirmModal.open && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmModal({ open: false, type: null })}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-blue-500/20 bg-[#061838] p-6 shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full ${confirmModal.type === 'block' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                  {confirmModal.type === 'block' ? <AlertTriangle size={32} /> : <Trash2 size={32} />}
+                </div>
+                
+                <h3 className="mb-2 text-xl font-bold text-white">
+                  {confirmModal.type === 'block' ? 'Block this User?' : 'Clear Conversation?'}
+                </h3>
+                <p className="mb-6 text-sm leading-relaxed text-blue-200/60">
+                  {confirmModal.type === 'block' 
+                    ? "Are you sure you want to block this user? You won't be able to send or receive messages from them."
+                    : "This will permanently delete all messages in this chat for you. This action cannot be undone."}
+                </p>
+
+                <div className="flex w-full gap-3">
+                  <button
+                    disabled={isClearing}
+                    onClick={() => setConfirmModal({ open: false, type: null })}
+                    className="flex-1 cursor-pointer rounded-xl border border-blue-900/40 py-2.5 text-sm font-semibold text-blue-200 transition-colors hover:bg-blue-900/30 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={isClearing}
+                    onClick={async () => {
+                      if (confirmModal.type === 'clear') {
+                        setIsClearing(true);
+                        const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
+                        const success = await clearChat(convId);
+                        setIsClearing(false);
+                        if (success) {
+                          setConfirmModal({ open: false, type: null });
+                          toast.success("Chat cleared successfully");
+                        } else {
+                          toast.error("Failed to clear chat");
+                        }
+                      } else {
+                        // Handle block logic if needed later
+                        console.log(`${confirmModal.type} action confirmed`);
+                        setConfirmModal({ open: false, type: null });
+                        toast.info(`${confirmModal.type === 'block' ? 'User blocked' : 'Chat cleared'} successfully`);
+                      }
+                    }}
+                    className={`flex-1 cursor-pointer rounded-xl py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg flex items-center justify-center gap-2 ${confirmModal.type === 'block' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'} disabled:opacity-70`}
+                  >
+                    {isClearing ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Clearing...
+                      </>
+                    ) : (
+                      'Confirm'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

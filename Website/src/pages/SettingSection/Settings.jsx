@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import useThemeStore from "../../Store/useThemeStore";
 import { logOutUser } from "../../Services/UserService";
 import useUserStore from "../../Store/useUserStore";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import Layout from "../../components/Layout";
 import {
   FaComment,
@@ -14,6 +14,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { toast } from "sonner"
 
 const Settings = () => {
   const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
@@ -36,10 +37,10 @@ const Settings = () => {
       setShowLogoutModal(false);
       await logOutUser();
       clearUser();
-      toast.success("You have been successfully logged out");
+      toast.success("Log out successfully", {position: "bottom-left"});
     } catch (error) {
       console.error("Error in logOut", error);
-      toast.error("Failed to logout. Please try again");
+      toast.error("Failed to logout. Please try again", {position: "top-right"});
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { X, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react' 
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import * as Yup from 'yup'
 import { useFormik } from 'formik'
 import { loginWithEmail } from '../Services/UserService.js'
@@ -8,6 +8,7 @@ import { motion } from "motion/react"
 import { slideDown } from '../Services/Animation.js'
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../Store/useUserStore.js';
+import { toast } from "sonner"
 
 const loginInitialValues = {
   email: "",
@@ -38,11 +39,11 @@ const LoginPopup = ({ setFormOpen }) => {
         if (response.success) {
           const userData = response.user
           setUser(userData)
-          toast.success("Login Successfully")
+          toast.success("Login Successfully", { position: "bottom-left" })
             navigate('/')
         }
       } catch (error) {
-        toast.error(error.response?.data?.message || "Invalid Email Id or password")
+        toast.warning(error.response?.data?.message || "Invalid Email Id or password", { position: "top-right" })
       } finally {
         setIsLoading(false)
       }

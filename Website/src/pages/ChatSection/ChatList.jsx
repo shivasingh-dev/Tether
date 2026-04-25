@@ -26,15 +26,23 @@ const ChatList = () => {
       ? (conv.unreadCount?.[user?._id] || 0)
       : Number(conv.unreadCount || 0);
 
+    const isLastMsgDeleted = conv.lastMessage?.deletedFor?.includes(user?._id);
+
     return {
       conversationId: conv._id,
       user: otherUser,
-      lastMessage: conv.lastMessage,
+      lastMessage: isLastMsgDeleted ? null : conv.lastMessage,
       unreadCount: unread,
     };
   });
 
-  const filteredContacts = contacts?.filter((contact) =>
+  const sortedContacts = contacts.sort((a, b) => {
+    const timeA = new Date(a.lastMessage?.createdAt || 0).getTime();
+    const timeB = new Date(b.lastMessage?.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+
+  const filteredContacts = sortedContacts?.filter((contact) =>
     contact?.user?.fullName?.toLowerCase().includes(searchTerms.toLowerCase()),
   );
 
@@ -70,8 +78,16 @@ const ChatList = () => {
 
       {/* recent chats list */}
       <div className="sidebar-scrollbar h-[calc(100vh-140px)] overflow-y-auto">
-        {filteredContacts?.map((chat) => {
-          const isSelected =
+        {filteredContacts?.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+            <span className="mb-3 text-4xl">💬</span>
+            <p className="text-sm text-blue-300/50">
+              No chat found for <span className="font-semibold text-blue-400">"{searchTerms}"</span>
+            </p>
+          </div>
+        ) : (
+          filteredContacts?.map((chat) => {
+            const isSelected =
             selectedContact?.conversationId === chat.conversationId;
 
           return (
@@ -129,7 +145,7 @@ const ChatList = () => {
               </div>
             </motion.div>
           );
-        })}
+        }))}
       </div>
     </div>
   );
