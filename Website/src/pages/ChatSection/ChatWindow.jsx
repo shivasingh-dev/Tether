@@ -94,7 +94,11 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     setCurrentConversation, isUserTyping, startTyping, stopTyping,
     getUserLastSeen, isUserOnline, cleanUp, resetChatState,
     addReactions, deleteMessage, clearChat,
+    blockStatus, checkBlockStatus, blockUser, unblockUser
   } = useChatStore();
+
+  const { initiateCall } = useCallStore();
+
 
   // ── Online / Last Seen ──
   const receiverId  = selectedContact?.user?._id || selectedContact?._id;
@@ -108,7 +112,16 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
   useEffect(() => {
     const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
-    if (convId) { setCurrentConversation(convId); fetchMessages(convId); }
+    if (convId) {
+      setCurrentConversation(convId);
+      fetchMessages(convId);
+      
+      // Check block status
+      const otherUserId = selectedContact?.user?._id || selectedContact?._id;
+      if (otherUserId) {
+        checkBlockStatus(otherUserId);
+      }
+    }
   }, [selectedContact, setCurrentConversation]);
 
   useEffect(() => {
@@ -260,6 +273,14 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       }, {})
     : {};
 
+  const handleVideoCall = () => {
+    toast.info("Please use Tether Mobile App for video and voice calls. WhatsApp-style calling is only available on mobile.", {
+      position: "top-center",
+      autoClose: 5000,
+      theme: "dark"
+    });
+  };
+
   const handleReaction = (messageId, emoji) => addReactions(messageId, emoji);
 
 
@@ -289,17 +310,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       </div>
     );
   }
-
-  const handleVideoCall = () => {
-    if (selectedContact && online) {
-      const { initiateCall } = useCallStore.getState();
-      initiateCall(selectedContact?._id, selectedContact?.fullName, selectedContact?.profilePicture, "video");
-    } else {
-      alert("User is offline, can not initiate the call");
-    }
-  };
-
-
+ 
   return (
     <>
       <div className="flex h-screen w-full flex-1 flex-col bg-[#020818]">
@@ -348,8 +359,9 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
           <div className="flex items-center gap-1">
             <button
               onClick={handleVideoCall}
-              title={online ? "Start Video Call" : "User is offline"}
-              className="cursor-pointer rounded-full p-2 text-blue-400 transition-colors hover:bg-blue-900/30"
+              disabled={!blockStatus.canMessage}
+              title={!blockStatus.canMessage ? "Calls disabled" : (online ? "Start Video Call" : "User is offline")}
+              className={`cursor-pointer rounded-full p-2 transition-colors ${!blockStatus.canMessage ? 'text-gray-500' : 'text-blue-400 hover:bg-blue-900/30'}`}
             >
               <FaVideo size={17} />
             </button>
@@ -478,8 +490,29 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
           </div>
         )}
 
+        {/* Blocked banner (WhatsApp style) */}
+        {!blockStatus.canMessage && (
+          <div className="mx-auto my-2 w-fit rounded-lg bg-blue-900/20 px-4 py-1.5 text-center backdrop-blur-sm border border-blue-500/10">
+            <p className="text-[12px] text-blue-300/70">
+              {blockStatus.isBlockedByMe ? (
+                <>
+                  You blocked this contact.{" "}
+                  <button 
+                    onClick={() => unblockUser(selectedContact?.user?._id || selectedContact?._id)}
+                    className="font-semibold text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Tap to unblock
+                  </button>
+                </>
+              ) : (
+                "You can no longer message this contact."
+              )}
+            </p>
+          </div>
+        )}
+
         {/* ── Bottom Bar ── */}
-        <div className="relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)]">
+        <div className={`relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)] ${!blockStatus.canMessage ? 'opacity-50 pointer-events-none' : ''}`}>
 
           {/* Attachment button */}
           <div ref={fileMenuRef} className="relative shrink-0">
@@ -552,8 +585,9 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                 handleSendMessage();
               }
             }}
-            placeholder="Type a message"
-            className="min-w-0 flex-1 rounded-full bg-transparent px-2 py-2.5 text-[14px] text-white transition-all outline-none placeholder:text-blue-400 sm:px-4"
+            placeholder={blockStatus.isBlockedByMe ? "Unblock to send a message" : (blockStatus.isBlockedByThem ? "You are blocked" : "Type a message")}
+            disabled={!blockStatus.canMessage}
+            className="min-w-0 flex-1 rounded-full bg-transparent px-2 py-2.5 text-[14px] text-white transition-all outline-none placeholder:text-blue-400 sm:px-4 disabled:cursor-not-allowed"
           />
 
           {/* Send button */}
@@ -594,7 +628,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       {/* ── Confirmation Modal ── */}
       <AnimatePresence>
         {confirmModal.open && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -645,10 +679,17 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                           toast.error("Failed to clear chat");
                         }
                       } else {
-                        // Handle block logic if needed later
-                        console.log(`${confirmModal.type} action confirmed`);
-                        setConfirmModal({ open: false, type: null });
-                        toast.info(`${confirmModal.type === 'block' ? 'User blocked' : 'Chat cleared'} successfully`);
+                        setIsClearing(true);
+                        try {
+                          const otherUserId = selectedContact?.user?._id || selectedContact?._id;
+                          await blockUser(otherUserId);
+                          setConfirmModal({ open: false, type: null });
+                          toast.success("User blocked successfully");
+                        } catch (err) {
+                          toast.error("Failed to block user");
+                        } finally {
+                          setIsClearing(false);
+                        }
                       }
                     }}
                     className={`flex-1 cursor-pointer rounded-xl py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg flex items-center justify-center gap-2 ${confirmModal.type === 'block' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'} disabled:opacity-70`}

@@ -61,8 +61,8 @@ const VideoCallManager = ({ socket }) => {
     endCall,
   ]);
 
-  // Memoized function to initial call
-  const initateCall = useCallback(
+  // Memoized function to initiate call
+  const initiateCall = useCallback(
     (receiverId, receiverName, receiverAvatar, callType = "video") => {
       const callId = `${user?._id}-${receiverId}-${Date.now()}`;
 
@@ -101,8 +101,8 @@ const VideoCallManager = ({ socket }) => {
 
   // expose the initiate call function to store
   useEffect(() => {
-    useCallStore.getState().initateCall = initateCall;
-  }, [initateCall]);
+    useCallStore.getState().initiateCall = initiateCall;
+  }, [initiateCall]);
 
   return <VideoCallModal socket={socket} />;
 };

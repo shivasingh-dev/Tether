@@ -38,7 +38,8 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     lastSeen: { type: Date },
     agreed: { type: Boolean },
-    savedContacts: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
+    savedContacts: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    blockedUsers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
   },
   { timestamps: true },
 );

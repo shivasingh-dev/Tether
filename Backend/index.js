@@ -11,6 +11,7 @@ import { statusRouter } from "./routes/statusRoute.js";
 import { AuthRoute } from "./routes/authRoute.js";
 import { updateProfileRoute } from "./routes/updateProfileRoute.js";
 import { chatRouter } from "./routes/chatRoute.js";
+import {blockRouter} from './routes/blockRoute.js'
 
 // env configuration
 
@@ -63,6 +64,7 @@ app.use('/api/auth', AuthRoute);
 app.use('/api/update', updateProfileRoute)
 app.use('/api/chats', chatRouter)
 app.use('/api/status', statusRouter)
+app.use('/api/block', blockRouter)
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);

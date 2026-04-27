@@ -1,8 +1,9 @@
 import { conversationModel } from "../models/conversation.js";
 import { messageModel } from "../models/message.js";
 import { uploadFileToCloudinary } from "../config/cloudinaryConfig.js";
+import userModel from "../models/user.js";
 
-// Send Message APi
+// Send Message API
 export const sendMessagge = async (req, res) => {
   try {
     const { senderId, receiverId, content, messageStatus } = req.body;
@@ -21,6 +22,28 @@ export const sendMessagge = async (req, res) => {
         message: "Sender ID and Receiver ID are required and must be valid.",
       });
     }
+
+    // ⭐ BLOCK CHECK - Yeh add karo
+    const sender = await userModel.findById(senderId).select("blockedUsers");
+    const receiver = await userModel
+      .findById(receiverId)
+      .select("blockedUsers");
+
+    // Check if sender has blocked receiver OR receiver has blocked sender
+    if (sender.blockedUsers.includes(receiverId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You have blocked this user. Unblock to send messages.",
+      });
+    }
+
+    if (receiver.blockedUsers.includes(senderId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot send messages to this user.",
+      });
+    }
+    // ⭐ BLOCK CHECK END
 
     let conversation = await conversationModel.findOne({
       participants: { $all: participants },
@@ -136,10 +159,13 @@ export const sendMessagge = async (req, res) => {
   }
 };
 
-// Get conversation API
+// Get conversation API (some changes are pending still)
 export const getConversation = async (req, res) => {
   const userId = req.userId;
   try {
+    // get current user's blocked users list
+    const currentUser = await userModel.findById(userId).select("blockedUsers");
+
     const conversations = await conversationModel
       .find({
         participants: userId,
@@ -156,9 +182,11 @@ export const getConversation = async (req, res) => {
       .lean();
 
     // Filter out lastMessage if it was deleted for this user
-    conversations.forEach(conv => {
+    conversations.forEach((conv) => {
       if (conv.lastMessage && conv.lastMessage.deletedFor) {
-        const deletedForIds = conv.lastMessage.deletedFor.map(id => id.toString());
+        const deletedForIds = conv.lastMessage.deletedFor.map((id) =>
+          id.toString(),
+        );
         if (deletedForIds.includes(userId.toString())) {
           conv.lastMessage = null;
         }
@@ -184,7 +212,7 @@ export const getConversation = async (req, res) => {
   }
 };
 
-// Get Messages Api
+// Get Messages API
 export const getMessages = async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.userId;
@@ -235,7 +263,7 @@ export const getMessages = async (req, res) => {
   }
 };
 
-// Mark as read Api //
+// Mark as read API
 export const markAsRead = async (req, res) => {
   const { messageIds } = req.body;
   const userId = req.userId;
@@ -264,7 +292,7 @@ export const markAsRead = async (req, res) => {
   }
 };
 
-// Delete one message Api from both side //
+// Delete one message API from both side //
 export const deleteMessage = async (req, res) => {
   const { messageId } = req.params;
   const userId = req.userId;
@@ -319,7 +347,7 @@ export const deleteMessage = async (req, res) => {
   }
 };
 
-// Clear all messages Api from one side
+// Clear all messages API from one side
 export const clearChat = async (req, res) => {
   const { conversationId } = req.params;
   const userId = req.userId;
@@ -327,11 +355,11 @@ export const clearChat = async (req, res) => {
   try {
     // Check if conversation exists
     const conversation = await conversationModel.findById(conversationId);
-    
+
     if (!conversation) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Conversation not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Conversation not found",
       });
     }
 
@@ -345,13 +373,13 @@ export const clearChat = async (req, res) => {
 
     // Update all messages - add userId to deletedFor array
     const result = await messageModel.updateMany(
-      { 
+      {
         conversation: conversationId,
-        deletedFor: { $ne: userId }
+        deletedFor: { $ne: userId },
       },
-      { 
-        $addToSet: { deletedFor: userId }
-      }
+      {
+        $addToSet: { deletedFor: userId },
+      },
     );
 
     // Check if both users have deleted - then permanently delete
@@ -362,24 +390,27 @@ export const clearChat = async (req, res) => {
 
     if (messagesToDelete.length > 0) {
       const deletedIds = messagesToDelete.map((m) => m._id);
-      
+
       await messageModel.deleteMany({
         _id: { $in: deletedIds },
       });
 
       // Update lastMessage if it was deleted
-      if (conversation.lastMessage && deletedIds.some(id => id.equals(conversation.lastMessage))) {
+      if (
+        conversation.lastMessage &&
+        deletedIds.some((id) => id.equals(conversation.lastMessage))
+      ) {
         // Find the most recent message that's not deleted by anyone
         const latestMessage = await messageModel
-          .findOne({ 
+          .findOne({
             conversation: conversationId,
             $or: [
               { deletedFor: { $exists: false } },
-              { deletedFor: { $size: 0 } }
-            ]
+              { deletedFor: { $size: 0 } },
+            ],
           })
           .sort({ createdAt: -1 });
-        
+
         conversation.lastMessage = latestMessage?._id || null;
       }
     }
@@ -390,8 +421,8 @@ export const clearChat = async (req, res) => {
 
     // Emit socket event only to the user who cleared — other user's view unchanged
     if (req.io) {
-      req.io.to(userId.toString()).emit("chat_cleared", { 
-        conversationId: conversationId 
+      req.io.to(userId.toString()).emit("chat_cleared", {
+        conversationId: conversationId,
       });
     }
 
@@ -406,9 +437,9 @@ export const clearChat = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in clearChat", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Internal server error" 
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };

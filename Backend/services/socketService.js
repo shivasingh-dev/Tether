@@ -301,6 +301,70 @@ export const initializeSocket = (server) => {
 
     // disconnect event
     socket.on("disconnect", handleDisconnected);
+
+    // --- VIDEO CALL EVENTS ---
+
+    // 1. Initiate Call
+    socket.on("initiate_call", ({ callerId, receiverId, callType, callerInfo }) => {
+      console.log(`Call initiated from ${callerId} to ${receiverId}`);
+      io.to(receiverId).emit("incoming_call", {
+        callerId,
+        callerName: callerInfo.userName,
+        callerAvatar: callerInfo.profilePicture,
+        callType,
+        callId: `${callerId}-${receiverId}-${Date.now()}`
+      });
+    });
+
+    // 2. Accept Call
+    socket.on("accept_call", ({ callerId, callId, receiverInfo }) => {
+      console.log(`Call ${callId} accepted by ${receiverInfo.fullName}`);
+      io.to(callerId).emit("call_accepted", {
+        receiverName: receiverInfo.fullName,
+        callId
+      });
+    });
+
+    // 3. Reject Call
+    socket.on("reject_call", ({ callerId, callId }) => {
+      console.log(`Call ${callId} rejected`);
+      io.to(callerId).emit("call_rejected", { callId });
+    });
+
+    // 4. End Call
+    socket.on("end_call", ({ participantId, callId }) => {
+      console.log(`Call ${callId} ended`);
+      io.to(participantId).emit("call_ended", { callId });
+    });
+
+    // 5. WebRTC Offer
+    socket.on("webrtc_offer", ({ offer, receiverId, callId }) => {
+      console.log(`WebRTC offer sent to ${receiverId}`);
+      io.to(receiverId).emit("webrtc_offer", {
+        offer,
+        senderId: userId, // Current user is sender
+        callId
+      });
+    });
+
+    // 6. WebRTC Answer
+    socket.on("webrtc_answer", ({ answer, receiverId, callId }) => {
+      console.log(`WebRTC answer sent to ${receiverId}`);
+      io.to(receiverId).emit("webrtc_answer", {
+        answer,
+        senderId: userId,
+        callId
+      });
+    });
+
+    // 7. WebRTC ICE Candidate
+    socket.on("webrtc_ice_candidate", ({ candidate, receiverId, callId }) => {
+      io.to(receiverId).emit("webrtc_ice_candidate", {
+        candidate,
+        senderId: userId,
+        callId
+      });
+    });
   });
 
   // attaching the online user map to the socket server for external use

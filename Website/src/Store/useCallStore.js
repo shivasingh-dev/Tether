@@ -49,7 +49,7 @@ const useCallStore = create(
       set({ peerConnection: pc });
     },
 
-    setIsCallModalOpen: (open) => {
+    setCallModalOpen: (open) => {
       set({ isCallModalOpen: open });
     },
 
@@ -62,7 +62,7 @@ const useCallStore = create(
       set({ iceCandidatesQueue: [...iceCandidatesQueue, candidate] });
     },
 
-    processQueueIceCandidates: async () => {
+    processQueuedIceCandidate: async () => {
       const { peerConnection, iceCandidatesQueue } = get();
 
       if (
