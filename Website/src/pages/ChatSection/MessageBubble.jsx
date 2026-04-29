@@ -7,6 +7,8 @@ import {
   FaRegCopy,
   FaSmile,
   FaRegTrashAlt,
+  FaDownload,
+  FaClock,
 } from "react-icons/fa";
 import { HiDotsVertical } from "react-icons/hi";
 import useOutsideClick from "../../hooks/useOutsideClick";
@@ -98,6 +100,22 @@ const MessageBubble = ({
                 alt="media"
                 className="rounded-xl max-w-xs border border-blue-900/20 object-cover"
               />
+              <div className="flex items-center justify-between mt-1 gap-2">
+                <div className="flex items-center gap-1 text-[10px] text-blue-300/50">
+                  <FaClock size={8} />
+                  <span>Expires in 15 days</span>
+                </div>
+                <a 
+                  href={message.imageOrVideoUrl} 
+                  download 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="p-1.5 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors"
+                  title="Download to keep"
+                >
+                  <FaDownload size={10} />
+                </a>
+              </div>
               {message.content && (
                 <p className="text-[14px] leading-relaxed mt-1 wrap-break-word">
                   {message.content}
@@ -119,6 +137,22 @@ const MessageBubble = ({
                 controls
                 className="rounded-xl max-w-xs border border-blue-900/20 object-cover"
               />
+              <div className="flex items-center justify-between mt-1 gap-2">
+                <div className="flex items-center gap-1 text-[10px] text-blue-300/50">
+                  <FaClock size={8} />
+                  <span>Expires in 15 days</span>
+                </div>
+                <a 
+                  href={message.imageOrVideoUrl} 
+                  download 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="p-1.5 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors"
+                  title="Download to keep"
+                >
+                  <FaDownload size={10} />
+                </a>
+              </div>
               {message.content && (
                 <p className="text-[14px] leading-relaxed mt-1 wrap-break-word">
                   {message.content}
@@ -139,6 +173,22 @@ const MessageBubble = ({
                 controls
                 className="rounded-xl max-w-xs outline-none"
               />
+              <div className="flex items-center justify-between mt-1 gap-2">
+                <div className="flex items-center gap-1 text-[10px] text-blue-300/50">
+                  <FaClock size={8} />
+                  <span>Expires in 15 days</span>
+                </div>
+                <a 
+                  href={message.imageOrVideoUrl} 
+                  download 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="p-1.5 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors"
+                  title="Download to keep"
+                >
+                  <FaDownload size={10} />
+                </a>
+              </div>
             </div>
           )}
 

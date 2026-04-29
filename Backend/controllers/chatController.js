@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { conversationModel } from "../models/conversation.js";
 import { messageModel } from "../models/message.js";
 import { uploadFileToCloudinary } from "../config/cloudinaryConfig.js";
@@ -56,7 +57,13 @@ export const sendMessagge = async (req, res) => {
       await conversation.save();
     }
 
+    // If conversation was deleted by either user, clear the deletedBy array on new message
+    if (conversation.deletedBy && conversation.deletedBy.length > 0) {
+      conversation.deletedBy = [];
+    }
+
     let imageOrVideoUrl = null;
+    let cloudinaryPublicId = null;
     let contentType = null;
 
     // media upload handled here
@@ -69,6 +76,7 @@ export const sendMessagge = async (req, res) => {
           .json({ success: false, messagae: "failed to upload media" });
       }
       imageOrVideoUrl = uploadFile?.secure_url;
+      cloudinaryPublicId = uploadFile?.public_id;
 
       if (file.mimetype.startsWith("image")) {
         contentType = "image";
@@ -96,6 +104,7 @@ export const sendMessagge = async (req, res) => {
       content,
       contentType: contentType || "text",
       imageOrVideoUrl,
+      cloudinaryPublicId,
       messageStatus: messageStatus || "sent",
     });
 
@@ -112,8 +121,15 @@ export const sendMessagge = async (req, res) => {
 
     const populateMessage = await messageModel
       .findById(message?._id)
-      .populate("sender", "fullName profilePicture")
-      .populate("receiver", "fullName profilePicture");
+      .populate("sender", "fullName profilePicture phoneNumber")
+      .populate("receiver", "fullName profilePicture phoneNumber")
+      .populate({
+        path: "conversation",
+        populate: {
+          path: "participants",
+          select: "fullName profilePicture phoneNumber isOnline lastSeen"
+        }
+      });
 
     // emit socket event for realtime
     if (req.io && req.socketUserMap) {
@@ -169,8 +185,9 @@ export const getConversation = async (req, res) => {
     const conversations = await conversationModel
       .find({
         participants: userId,
+        deletedBy: { $ne: userId } // Do not fetch conversations deleted by this user
       })
-      .populate("participants", "fullName profilePicture isOnline lastSeen")
+      .populate("participants", "fullName profilePicture isOnline lastSeen phoneNumber")
       .populate({
         path: "lastMessage",
         populate: {
@@ -298,6 +315,9 @@ export const deleteMessage = async (req, res) => {
   const userId = req.userId;
 
   try {
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({ success: false, message: "Invalid Message ID" });
+    }
     const message = await messageModel.findById(messageId);
     if (!message) {
       return res
@@ -440,6 +460,61 @@ export const clearChat = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
+    });
+  }
+};
+
+// Delete Conversation API
+export const deleteConversation = async (req, res) => {
+  const { conversationId } = req.params;
+  const userId = req.userId;
+
+  try {
+    const conversation = await conversationModel.findById(conversationId);
+    
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: "Conversation not found" });
+    }
+
+    if (!conversation.participants.includes(userId)) {
+      return res.status(403).json({ success: false, message: "Not authorized to delete this conversation" });
+    }
+
+    // Add user to deletedBy array
+    await conversationModel.updateOne(
+      { _id: conversationId },
+      { $addToSet: { deletedBy: userId } }
+    );
+
+    const updatedConversation = await conversationModel.findById(conversationId);
+
+    // If both users have deleted it, permanently remove from DB
+    const allDeleted = updatedConversation.participants.every(p => 
+      updatedConversation.deletedBy.includes(p.toString())
+    );
+
+    if (allDeleted) {
+      await conversationModel.findByIdAndDelete(conversationId);
+      await messageModel.deleteMany({ conversation: conversationId });
+      
+      return res.status(200).json({
+        success: true,
+        message: "Conversation permanently deleted",
+        data: { permanentlyDeleted: true }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Conversation deleted for user",
+      data: { permanentlyDeleted: false }
+    });
+
+  } catch (error) {
+    console.error("Error in deleteConversation", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
     });
   }
 };

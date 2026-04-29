@@ -14,6 +14,7 @@ const messageSchema = new mongoose.Schema({
   },
   content: { type: String },
   imageOrVideoUrl: { type: String },
+  cloudinaryPublicId: { type: String },
   contentType: { type: String, enum: ['image', 'text', 'video', 'audio'] },
   reactions: [
     {

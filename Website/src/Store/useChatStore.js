@@ -13,6 +13,8 @@ export const useChatStore = create((set, get) => ({
   error: null,
   onlineUsers: new Map(),
   typingUsers: new Map(),
+  selectedContactId: null,
+  setSelectedContactId: (id) => set({ selectedContactId: id }),
   blockStatus: { isBlockedByMe: false, isBlockedByThem: false, canMessage: true },
   setBlockStatus: (status) => set({ blockStatus: status }),
 
@@ -33,6 +35,10 @@ export const useChatStore = create((set, get) => ({
     socket.off("reaction_updated");
     socket.off("message_status_update");
     socket.off("chat_cleared");
+    socket.off("user_blocked");
+    socket.off("blocked_by_user");
+    socket.off("user_unblocked");
+    socket.off("unblocked_by_user");
 
     // listen for incoming message
     socket.on("receive_message", (message) => {
@@ -106,29 +112,39 @@ export const useChatStore = create((set, get) => ({
     });
 
     socket.on("user_blocked", ({ blockedUserId }) => {
-      const { selectedContact } = get(); // Check from somewhere if this user is selected
-      // Actually, it's better to just update the blockStatus if it matches
-      set((state) => ({
-        blockStatus: { ...state.blockStatus, isBlockedByMe: true, canMessage: false },
-      }));
+      const { selectedContactId } = get();
+      if (selectedContactId === blockedUserId) {
+        set((state) => ({
+          blockStatus: { ...state.blockStatus, isBlockedByMe: true, canMessage: false },
+        }));
+      }
     });
 
     socket.on("blocked_by_user", ({ blockedByUserId }) => {
-      set((state) => ({
-        blockStatus: { ...state.blockStatus, isBlockedByThem: true, canMessage: false },
-      }));
+      const { selectedContactId } = get();
+      if (selectedContactId === blockedByUserId) {
+        set((state) => ({
+          blockStatus: { ...state.blockStatus, isBlockedByThem: true, canMessage: false },
+        }));
+      }
     });
 
     socket.on("user_unblocked", ({ unblockedUserId }) => {
-      set((state) => ({
-        blockStatus: { ...state.blockStatus, isBlockedByMe: false, canMessage: !state.blockStatus.isBlockedByThem },
-      }));
+      const { selectedContactId } = get();
+      if (selectedContactId === unblockedUserId) {
+        set((state) => ({
+          blockStatus: { ...state.blockStatus, isBlockedByMe: false, canMessage: !state.blockStatus.isBlockedByThem },
+        }));
+      }
     });
 
     socket.on("unblocked_by_user", ({ unblockedByUserId }) => {
-      set((state) => ({
-        blockStatus: { ...state.blockStatus, isBlockedByThem: false, canMessage: !state.blockStatus.isBlockedByMe },
-      }));
+      const { selectedContactId } = get();
+      if (selectedContactId === unblockedByUserId) {
+        set((state) => ({
+          blockStatus: { ...state.blockStatus, isBlockedByThem: false, canMessage: !state.blockStatus.isBlockedByMe },
+        }));
+      }
     });
 
     // handle chat cleared event
@@ -613,6 +629,7 @@ export const useChatStore = create((set, get) => ({
     set({
       messages: [],
       currentConversation: null,
+      selectedContactId: null,
       blockStatus: { isBlockedByMe: false, isBlockedByThem: false, canMessage: true },
     }),
 

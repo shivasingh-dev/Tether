@@ -18,7 +18,7 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import MessageBubble from "./MessageBubble";
-import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical } from "lucide-react";
+import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical, CheckCircle } from "lucide-react";
 import { IoMdSend } from "react-icons/io";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSocket } from "../../Services/ChatServices";
@@ -94,7 +94,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     setCurrentConversation, isUserTyping, startTyping, stopTyping,
     getUserLastSeen, isUserOnline, cleanUp, resetChatState,
     addReactions, deleteMessage, clearChat,
-    blockStatus, checkBlockStatus, blockUser, unblockUser
+    blockStatus, checkBlockStatus, blockUser, unblockUser,
+    setSelectedContactId
   } = useChatStore();
 
   const { initiateCall } = useCallStore();
@@ -119,6 +120,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       // Check block status
       const otherUserId = selectedContact?.user?._id || selectedContact?._id;
       if (otherUserId) {
+        setSelectedContactId(otherUserId);
         checkBlockStatus(otherUserId);
       }
     }
@@ -396,13 +398,27 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setConfirmModal({ open: true, type: "block" });
+                        const otherUserId = selectedContact?.user?._id || selectedContact?._id;
+                        if (blockStatus.isBlockedByMe) {
+                          unblockUser(otherUserId);
+                        } else {
+                          setConfirmModal({ open: true, type: "block" });
+                        }
                         setIsActionOpen(false);
                       }}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10"
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${blockStatus.isBlockedByMe ? 'text-green-400 hover:bg-green-500/10' : 'text-red-400 hover:bg-red-500/10'}`}
                     >
-                      <UserX size={16} className="text-red-400" />
-                      Block User
+                      {blockStatus.isBlockedByMe ? (
+                        <>
+                          <CheckCircle size={16} className="text-green-400" />
+                          Unblock User
+                        </>
+                      ) : (
+                        <>
+                          <UserX size={16} className="text-red-400" />
+                          Block User
+                        </>
+                      )}
                     </button>
                   </motion.div>
                 )}

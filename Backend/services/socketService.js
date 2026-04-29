@@ -18,6 +18,18 @@ const typingUsers = new Map();
 // map to store socket id -> source ("web" | "app")
 const socketSources = new Map();
 
+// Helper to emit events only to Mobile App sockets of a user
+const emitToAppOnly = (io, targetUserId, event, data) => {
+  const userSockets = onlineUsers.get(targetUserId.toString());
+  if (userSockets) {
+    userSockets.forEach((socketId) => {
+      if (socketSources.get(socketId) === "app") {
+        io.to(socketId).emit(event, data);
+      }
+    });
+  }
+};
+
 // main configuration
 
 export const initializeSocket = (server) => {
@@ -307,7 +319,7 @@ export const initializeSocket = (server) => {
     // 1. Initiate Call
     socket.on("initiate_call", ({ callerId, receiverId, callType, callerInfo }) => {
       console.log(`Call initiated from ${callerId} to ${receiverId}`);
-      io.to(receiverId).emit("incoming_call", {
+      emitToAppOnly(io, receiverId, "incoming_call", {
         callerId,
         callerName: callerInfo.userName,
         callerAvatar: callerInfo.profilePicture,
@@ -319,7 +331,7 @@ export const initializeSocket = (server) => {
     // 2. Accept Call
     socket.on("accept_call", ({ callerId, callId, receiverInfo }) => {
       console.log(`Call ${callId} accepted by ${receiverInfo.fullName}`);
-      io.to(callerId).emit("call_accepted", {
+      emitToAppOnly(io, callerId, "call_accepted", {
         receiverName: receiverInfo.fullName,
         callId
       });
@@ -328,19 +340,19 @@ export const initializeSocket = (server) => {
     // 3. Reject Call
     socket.on("reject_call", ({ callerId, callId }) => {
       console.log(`Call ${callId} rejected`);
-      io.to(callerId).emit("call_rejected", { callId });
+      emitToAppOnly(io, callerId, "call_rejected", { callId });
     });
 
     // 4. End Call
     socket.on("end_call", ({ participantId, callId }) => {
       console.log(`Call ${callId} ended`);
-      io.to(participantId).emit("call_ended", { callId });
+      emitToAppOnly(io, participantId, "call_ended", { callId });
     });
 
     // 5. WebRTC Offer
     socket.on("webrtc_offer", ({ offer, receiverId, callId }) => {
       console.log(`WebRTC offer sent to ${receiverId}`);
-      io.to(receiverId).emit("webrtc_offer", {
+      emitToAppOnly(io, receiverId, "webrtc_offer", {
         offer,
         senderId: userId, // Current user is sender
         callId
@@ -350,7 +362,7 @@ export const initializeSocket = (server) => {
     // 6. WebRTC Answer
     socket.on("webrtc_answer", ({ answer, receiverId, callId }) => {
       console.log(`WebRTC answer sent to ${receiverId}`);
-      io.to(receiverId).emit("webrtc_answer", {
+      emitToAppOnly(io, receiverId, "webrtc_answer", {
         answer,
         senderId: userId,
         callId
@@ -359,7 +371,7 @@ export const initializeSocket = (server) => {
 
     // 7. WebRTC ICE Candidate
     socket.on("webrtc_ice_candidate", ({ candidate, receiverId, callId }) => {
-      io.to(receiverId).emit("webrtc_ice_candidate", {
+      emitToAppOnly(io, receiverId, "webrtc_ice_candidate", {
         candidate,
         senderId: userId,
         callId

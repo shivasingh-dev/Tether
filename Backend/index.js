@@ -12,6 +12,7 @@ import { AuthRoute } from "./routes/authRoute.js";
 import { updateProfileRoute } from "./routes/updateProfileRoute.js";
 import { chatRouter } from "./routes/chatRoute.js";
 import {blockRouter} from './routes/blockRoute.js'
+import { startCleanupTask } from "./tasks/cleanupTask.js";
 
 // env configuration
 
@@ -32,6 +33,9 @@ const corsOption = {
 
 // Database
 connectDB();
+
+// Start Background Tasks
+startCleanupTask();
 
 // Middleware
 app.use(express.json());           
