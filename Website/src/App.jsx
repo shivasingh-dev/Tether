@@ -3,7 +3,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import Welcome from "./pages/WelcomeSection/Welcome";
 import ChatList from "./pages/ChatSection/ChatList.jsx";
 import { ToastContainer, toast } from "react-toastify";
-import { ProtectedRoute, PublicRoute } from "./protected.jsx";
+import { ProtectedRoute, PublicRoute } from "./Protected.jsx";
 import HomePage from "./components/HomePage.jsx";
 import UserDetails from "./components/UserDetails.jsx";
 import Status from "./pages/StatusSection/Status.jsx";
