@@ -18,7 +18,7 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import MessageBubble from "./MessageBubble";
-import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical, CheckCircle } from "lucide-react";
+import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical, CheckCircle, User } from "lucide-react";
 import { IoMdSend } from "react-icons/io";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSocket } from "../../Services/ChatServices";
@@ -30,7 +30,7 @@ import {
   formatFileSize,
   validateFile,
 } from "../../Utils/FileConfig";
-import { toast } from "react-toastify";
+import { toast } from "sonner"
 
 // ─── ImageEditor import (same folder mein honi chahiye) ───────────
 import ImageEditor from "../../components/ImageEditor";
@@ -110,6 +110,10 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const storeLastSeen = getUserLastSeen(receiverId);
   const lastSeen      = storeLastSeen || selectedContact?.user?.lastSeen;
   const isTyping      = isUserTyping(receiverId);
+
+  const otherUser = selectedContact?.user;
+  const savedName = user?.contactMappings?.[otherUser?.phoneNumber];
+  const displayName = savedName || otherUser?.fullName || selectedContact?.fullName || otherUser?.phoneNumber || "Unknown User";
 
   useEffect(() => {
     const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
@@ -276,9 +280,9 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
     : {};
 
   const handleVideoCall = () => {
-    toast.info("Please use Tether Mobile App for video and voice calls. WhatsApp-style calling is only available on mobile.", {
-      position: "top-center",
-      autoClose: 5000,
+    toast("Please use Tether Mobile App for video and voice calls.", {
+      position: "top-right",
+      autoClose: 3000,
       theme: "dark"
     });
   };
@@ -332,17 +336,21 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
               className="h-10 w-10 shrink-0 rounded-full border border-blue-500/20 object-cover"
               alt="profile"
             />
-          ) : (
+          ) : displayName ? (
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
               <span className="text-sm font-semibold text-blue-400">
-                {(selectedContact?.user?.fullName || selectedContact?.fullName || "?")[0].toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </span>
+            </div>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+              <User size={20} className="text-blue-400" />
             </div>
           )}
 
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-[15px] leading-tight font-semibold text-blue-50">
-              {selectedContact?.user?.fullName || selectedContact?.fullName}
+              {displayName}
             </h2>
             <p className="mt-0.5 text-[12px] leading-tight">
               {isTyping ? (
@@ -389,7 +397,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                         setConfirmModal({ open: true, type: "clear" });
                         setIsActionOpen(false);
                       }}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-blue-200 transition-colors cursor-pointer hover:bg-blue-800/40"
                     >
                       <Trash2 size={16} className="text-blue-400" />
                       Clear Chat
@@ -406,7 +414,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                         }
                         setIsActionOpen(false);
                       }}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${blockStatus.isBlockedByMe ? 'text-green-400 hover:bg-green-500/10' : 'text-red-400 hover:bg-red-500/10'}`}
+                      className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${blockStatus.isBlockedByMe ? 'text-green-400 hover:bg-green-500/10' : 'text-red-400 hover:bg-red-500/10'}`}
                     >
                       {blockStatus.isBlockedByMe ? (
                         <>
@@ -553,7 +561,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                     if (fileInputRef.current) { fileInputRef.current.value = ""; fileInputRef.current.click(); }
                     setShowFileMenu(false);
                   }}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors cursor-pointer hover:bg-blue-800/40"
                 >
                   <FaImage size={14} className="text-blue-400" />
                   Image / Video
@@ -561,7 +569,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
                 <div className="border-t border-blue-900/30" />
                 <button
                   onClick={() => { fileInputRef.current.click(); setShowFileMenu(false); }}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors hover:bg-blue-800/40"
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-200 transition-colors cursor-pointer hover:bg-blue-800/40"
                 >
                   <FaFile size={13} className="text-blue-400" />
                   Documents

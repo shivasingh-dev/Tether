@@ -103,10 +103,18 @@ export const getAllUserWithContacts = async (req, res) => {
 
     // savedContacts update karo
     const contactIds = registeredContacts.map(c => c._id);
+    const updateObj = {};
     if (contactIds.length) {
-      await userModel.findByIdAndUpdate(userId, {
-        $addToSet: { savedContacts: { $each: contactIds } }
-      });
+      updateObj.$addToSet = { savedContacts: { $each: contactIds } };
+    }
+    
+    const { contactMapping } = req.body;
+    if (contactMapping) {
+      updateObj.$set = { contactMappings: contactMapping };
+    }
+
+    if (Object.keys(updateObj).length > 0) {
+      await userModel.findByIdAndUpdate(userId, updateObj);
     }
 
     return res.status(200).json({

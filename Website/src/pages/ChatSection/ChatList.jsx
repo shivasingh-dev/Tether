@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import useLayoutStore from "../../Store/useLayoutStore.js";
 import useThemeStore from "../../Store/useThemeStore.js";
 import useUserStore from "../../Store/useUserStore.js";
-import { FolderPlus, Search } from "lucide-react";
+import { FolderPlus, Search, User } from "lucide-react";
 import { motion } from "motion/react";
 import formatTimestamp from "../../Utils/formatTime.js";
 import { useChatStore } from "../../Store/useChatStore.js";
@@ -22,6 +22,7 @@ const ChatList = () => {
     : conversations?.data || [];
   const contacts = convList.map((conv) => {
     const otherUser = conv.participants?.find((p) => p._id !== user?._id);
+    const savedName = user?.contactMappings?.[otherUser?.phoneNumber];
     const unread = typeof conv.unreadCount === "object" && conv.unreadCount !== null
       ? (conv.unreadCount?.[user?._id] || 0)
       : Number(conv.unreadCount || 0);
@@ -31,6 +32,7 @@ const ChatList = () => {
     return {
       conversationId: conv._id,
       user: otherUser,
+      displayName: savedName || otherUser?.fullName || otherUser?.phoneNumber || "Unknown User",
       lastMessage: isLastMsgDeleted ? null : conv.lastMessage,
       unreadCount: unread,
     };
@@ -43,7 +45,9 @@ const ChatList = () => {
   });
 
   const filteredContacts = sortedContacts?.filter((contact) =>
-    contact?.user?.fullName?.toLowerCase().includes(searchTerms.toLowerCase()),
+    (contact?.displayName || "")
+      .toLowerCase()
+      .includes(searchTerms.toLowerCase()),
   );
 
   return (
@@ -108,12 +112,16 @@ const ChatList = () => {
                     className="h-12 w-12 rounded-full border border-blue-500/20 object-cover"
                     alt="profile"
                   />
+                ) : chat?.displayName ? (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+                    <span className="text-xl font-bold text-blue-400">
+                      {chat.displayName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                 ) : (
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
-                  <span className="text-xl font-bold text-blue-400">
-                    {chat?.user?.fullName?.charAt(0)?.toUpperCase() || '?'}
-                  </span>
-                </div>
+                    <User size={24} className="text-blue-400" />
+                  </div>
                 )}
               </div>
 
@@ -123,7 +131,7 @@ const ChatList = () => {
                   <h2
                     className={`truncate text-[16px] font-medium ${isSelected ? "text-white" : "text-blue-50"}`}
                   >
-                    {chat?.user?.fullName}
+                    {chat.displayName}
                   </h2>
                   <span className="ml-2 text-[11px] text-blue-300/70">
                     {formatTimestamp(chat?.lastMessage?.createdAt)}
