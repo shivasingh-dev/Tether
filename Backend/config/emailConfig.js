@@ -5,21 +5,20 @@ dotenv.config()
 export const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
-  secure: true, 
+  secure: true,
   auth: {
     user: "abcd247044@gmail.com",
     pass: process.env.GMAIL_KEY,
   },
-  // --- Ye niche wali settings add karo ---
-  pool: true, // Connection reuse karne ke liye
-  connectionTimeout: 10000, // 10 seconds tak wait karega
-  greetingTimeout: 5000,
-  socketTimeout: 30000,
+  // --- YE FIX HAI ---
+  connectionTimeout: 20000, // Timeout badha do (20 sec)
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
+  dnsVapi: "ipv4only", // Node.js ko force karega IPv4 use karne ke liye
   tls: {
-    // Railway par ye line connection stable karti hai
-    servername: "smtp.gmail.com",
-    rejectUnauthorized: false, // Agar certificate issue ho toh bypass karne ke liye
-  },
+    rejectUnauthorized: false, // Security check bypass (sirf debugging ke liye)
+    servername: "smtp.gmail.com"
+  }
 });
 
 // Ek baar verify karne ke liye ye code add karo (sirf debugging ke liye)
