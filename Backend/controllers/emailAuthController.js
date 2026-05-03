@@ -56,6 +56,11 @@ export const registerEmail = async (req, res) => {
       return res
         .status(200)
         .json({ success: true, message: "OTP sent to your email" });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "User not found with this phone number. Please register with phone first.",
+      });
     }
   } catch (error) {
     console.error("Error in registering user email", error);

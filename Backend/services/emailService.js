@@ -1,4 +1,4 @@
-import { transporter } from "../config/emailConfig.js";
+import { transporter, FROM_EMAIL } from "../config/emailConfig.js";
 import {
   sendEmailOtpTemplate,
   sendWelcomeEmailTemplate,
@@ -7,7 +7,7 @@ import {
 export const sendVerificationCodeEmail = async (email, otp) => {
   try {
     const response = await transporter.sendMail({
-      from: '"Tether-Support" <abcd247044@gmail.com>',
+      from: `"Tether-Support" <${FROM_EMAIL}>`,
       to: email,
       subject: "Verify your Email",
       text: "Verify your Email",
@@ -23,7 +23,7 @@ export const sendVerificationCodeEmail = async (email, otp) => {
 export const sendWelcomeEmail = async (email, firstName) => {
   try {
     const response = await transporter.sendMail({
-      from: '"Tether-Team" <abcd247044@gmail.com>',
+      from: `"Tether-Team" <${FROM_EMAIL}>`,
       to: email,
       subject: "Welcome to Tether",
       text: "Wecome",
