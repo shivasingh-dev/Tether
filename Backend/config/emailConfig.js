@@ -2,30 +2,23 @@ import nodemailer from 'nodemailer'
 import dotenv from 'dotenv'
 dotenv.config()
 
+import nodemailer from "nodemailer";
+
 export const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false, // 587 ke liye false hi rahega
   auth: {
-    user: "abcd247044@gmail.com",
-    pass: process.env.GMAIL_KEY,
+    user: "aa115e001@smtp-brevo.com", // Jo 'Login' aapne abhi likha wahi yahan aayega
+    pass: "xsmtpsib-1b35a36d8c6c7a27067f5f6330b55dd05b50cf8885caec62deece18abd911826-9sBE0rAsYh0FuPEw", // Aapki SMTP key
   },
-  // --- YE FIX HAI ---
-  connectionTimeout: 20000, // Timeout badha do (20 sec)
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-  dnsVapi: "ipv4only", // Node.js ko force karega IPv4 use karne ke liye
-  tls: {
-    rejectUnauthorized: false, // Security check bypass (sirf debugging ke liye)
-    servername: "smtp.gmail.com"
-  }
 });
 
-// Ek baar verify karne ke liye ye code add karo (sirf debugging ke liye)
+// Ye check karne ke liye ki connection sahi hai ya nahi
 transporter.verify((error, success) => {
   if (error) {
-    console.log("Transporter error:", error);
+    console.log("Brevo Error:", error);
   } else {
-    console.log("Server is ready to take our messages");
+    console.log("Mubarak ho! Server email bhejne ke liye ready hai.");
   }
 });
