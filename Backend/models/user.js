@@ -40,6 +40,7 @@ const userSchema = new mongoose.Schema(
     agreed: { type: Boolean },
     savedContacts: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     blockedUsers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    reportedUsers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     contactMappings: { type: Map, of: String, default: {} }
   },
   { timestamps: true },

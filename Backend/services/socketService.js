@@ -33,15 +33,11 @@ const emitToAppOnly = (io, targetUserId, event, data) => {
 // main configuration
 
 export const initializeSocket = (server) => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:8081",
-    process.env.FRONTEND_URL,
-  ];
-
   const io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        callback(null, true);
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     },

@@ -28,12 +28,8 @@ export const ProtectedRoute = () => {
       }
     }
 
-    // ← sirf tab check karo jab authenticated nahi hai
-    if (!isAuthenticated) {
-      verifyAuth()
-    } else {
-      setIsChecking(false)  // ← already authenticated hai toh check skip karo
-    }
+    // Always verify auth on load to get the latest user data (like contact mappings)
+    verifyAuth()
   }, [])
 
   if (isChecking) return <Loader />

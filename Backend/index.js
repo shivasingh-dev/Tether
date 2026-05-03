@@ -12,6 +12,7 @@ import { AuthRoute } from "./routes/authRoute.js";
 import { updateProfileRoute } from "./routes/updateProfileRoute.js";
 import { chatRouter } from "./routes/chatRoute.js";
 import {blockRouter} from './routes/blockRoute.js'
+import {reportRouter} from './routes/reportRoute.js'
 import { startCleanupTask } from "./tasks/cleanupTask.js";
 
 // env configuration
@@ -69,6 +70,7 @@ app.use('/update', updateProfileRoute)
 app.use('/chats', chatRouter)
 app.use('/status', statusRouter)
 app.use('/block', blockRouter)
+app.use('/report', reportRouter)
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);

@@ -139,6 +139,7 @@ export const emailLogin = async (req, res) => {
       profilePicture: user.profilePicture || "",
       about: user.about || "Hey there! I am using Tether",
       isOnline: user.isOnline,
+      contactMappings: user.contactMappings || {},
     };
 
     const token = createToken(user._id)
