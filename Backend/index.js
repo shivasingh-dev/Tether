@@ -64,11 +64,11 @@ app.use((req, res, next) => {
 
 
 // Routes
-app.use('/api/auth', AuthRoute);  
-app.use('/api/update', updateProfileRoute)
-app.use('/api/chats', chatRouter)
-app.use('/api/status', statusRouter)
-app.use('/api/block', blockRouter)
+app.use('/auth', AuthRoute);  
+app.use('/update', updateProfileRoute)
+app.use('/chats', chatRouter)
+app.use('/status', statusRouter)
+app.use('/block', blockRouter)
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
