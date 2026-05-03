@@ -3,7 +3,7 @@ import useUserStore from "../Store/useUserStore";
 
 let socket = null;
 
-const apiUrl = `http://localhost:8000`;
+const apiUrl = `https://tether-production-8bf7.up.railway.app`;
 
 export const initializeSocket = () => {
   // Agar socket connected hai ya abhi connect ho raha hai → reuse karo
