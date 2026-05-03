@@ -1,5 +1,5 @@
 import express from "express";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { reportUser, unreportUser, checkReportStatus } from "../controllers/reportController.js";
 
 export const reportRouter = express.Router()
