@@ -2,7 +2,7 @@ import axios from 'axios'
 import useUserStore from '../Store/useUserStore';
 import { getSocket } from './ChatServices';
 
-const apiUrl = `http://localhost:8000/api/`
+const apiUrl = `https://tether-backend-five.vercel.app/`
 
 
 const axiosInstance = axios.create({

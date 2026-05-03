@@ -1,8 +1,7 @@
 import multer from "multer";
-import fs from "fs";
-import path from "path";
 import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
+import { Readable } from "stream";
 
 dotenv.config();
 
@@ -13,27 +12,22 @@ cloudinary.config({
 });
 
 export const uploadFileToCloudinary = (file) => {
-  const options = {
-    resource_type: file.mimetype.startsWith("video") ? "video" : "image",
-  };
-
   return new Promise((resolve, reject) => {
-    const uploader = file.mimetype.startsWith("video")
-      ? cloudinary.uploader.upload_large
-      : cloudinary.uploader.upload;
-
-    const absolutePath = path.resolve(file.path);
-
-    uploader(absolutePath, options, (error, result) => {
-      fs.unlink(absolutePath, () => {})
-      if (error) {
-        return reject(error)
+    const resource_type = file.mimetype.startsWith("video") ? "video" : "image";
+    
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { resource_type },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary stream upload error:", error);
+          return reject(error);
+        }
+        resolve(result);
       }
-      resolve(result)
-    })
+    );
+
+    Readable.from(file.buffer).pipe(uploadStream);
   });
 };
 
-
-export const multerMiddleware = multer({dest: 'uploads/'}).single('media')
-
+export const multerMiddleware = multer({ storage: multer.memoryStorage() }).single('media');
