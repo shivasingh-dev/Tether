@@ -1,4 +1,4 @@
-import { transporter, FROM_EMAIL } from "../config/emailConfig.js";
+import { apiInstance, FROM_EMAIL } from "../config/emailConfig.js";
 import {
   sendEmailOtpTemplate,
   sendWelcomeEmailTemplate,
@@ -6,14 +6,13 @@ import {
 
 export const sendVerificationCodeEmail = async (email, otp) => {
   try {
-    const response = await transporter.sendMail({
-      from: `"Tether-Support" <${FROM_EMAIL}>`,
-      to: email,
+    const data = await apiInstance.transactionalEmails.sendTransacEmail({
       subject: "Verify your Email",
-      text: "Verify your Email",
-      html: sendEmailOtpTemplate(otp),
+      htmlContent: sendEmailOtpTemplate(otp),
+      sender: { name: "Tether-Support", email: FROM_EMAIL },
+      to: [{ email: email }],
     });
-    console.log("OTP email sent successfully");
+    console.log("OTP email sent successfully! MessageId:", data.data.messageId);
   } catch (error) {
     console.error("Error in sending mail", error);
     throw error;
@@ -22,14 +21,13 @@ export const sendVerificationCodeEmail = async (email, otp) => {
 
 export const sendWelcomeEmail = async (email, firstName) => {
   try {
-    const response = await transporter.sendMail({
-      from: `"Tether-Team" <${FROM_EMAIL}>`,
-      to: email,
+    const data = await apiInstance.transactionalEmails.sendTransacEmail({
       subject: "Welcome to Tether",
-      text: "Wecome",
-      html: sendWelcomeEmailTemplate(firstName),
+      htmlContent: sendWelcomeEmailTemplate(firstName),
+      sender: { name: "Tether-Team", email: FROM_EMAIL },
+      to: [{ email: email }],
     });
-    console.log("Welcome Email sent successfully");
+    console.log("Welcome Email sent successfully! MessageId:", data.data.messageId);
   } catch (error) {
     console.error("Error in sending welcome email", error);
     throw error;
