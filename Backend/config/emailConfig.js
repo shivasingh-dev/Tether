@@ -1,26 +1,54 @@
-import { BrevoClient } from '@getbrevo/brevo';
+import { google } from 'googleapis';
+import MailComposer from 'nodemailer/lib/mail-composer/index.js';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-// API Instance set up (Brevo v5.0+)
-export const apiInstance = new BrevoClient({
-  apiKey: 'xsmtpsib-1b35a36d8c6c7a27067f5f6330b55dd05b50cf8885caec62deece18abd911826-9sBE0rAsYh0FuPEw'
-});
-
-export const FROM_EMAIL = "shivasingh247044@gmail.com";
-
-export const sendEmail = async (toEmail, otp) => {
-  try {
-    const data = await apiInstance.transactionalEmails.sendTransacEmail({
-      subject: "Aapka OTP Code",
-      htmlContent: `<html><body><h1>Aapka OTP hai: ${otp}</h1></body></html>`,
-      sender: { "name": "Tether", "email": FROM_EMAIL },
-      to: [{ "email": toEmail }]
+class EmailService {
+  constructor() {
+    this.oauth2Client = new google.auth.OAuth2(
+      process.env.OAUTH_CLIENT_ID,
+      process.env.OAUTH_CLIENT_SECRET,
+      'https://developers.google.com/oauthplayground'
+    );
+    this.oauth2Client.setCredentials({
+      refresh_token: process.env.OAUTH_REFRESH_TOKEN
     });
-    console.log('Email successfully sent! MessageId:', data.data.messageId);
-    return true;
-  } catch (error) {
-    console.error('Brevo API Error:', error);
-    return false;
+    this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
   }
-};
+
+  async sendEmail(to, subject, htmlContent) {
+    try {
+      const mailOptions = {
+        from: `Tether Support <${process.env.OAUTH_EMAIL}>`,
+        to: to,
+        subject: subject,
+        html: htmlContent,
+        textEncoding: 'base64'
+      };
+      const mail = new MailComposer(mailOptions);
+      const message = await mail.compile().build();
+      const rawMessage = Buffer.from(message)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      const result = await this.gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: rawMessage
+        }
+      });
+      console.log('Email sent successfully:', result.data.id);
+      return result.data;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
+}
+
+const emailServiceInstance = new EmailService();
+export const FROM_EMAIL = process.env.OAUTH_EMAIL;
+export const sendEmail = (to, subject, html) => emailServiceInstance.sendEmail(to, subject, html);
+export default emailServiceInstance;
