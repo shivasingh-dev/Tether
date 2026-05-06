@@ -510,7 +510,6 @@ export const useChatStore = create((set, get) => ({
       const { data } = await axiosInstance.put("/chats/messages/read", {
         messageIds: unreadIds,
       });
-      console.log(`messages mark as read`, data);
       set((state) => ({
         messages: state.messages.map((msg) =>
           unreadIds.includes(msg._id) ? { ...msg, messageStatus: "read" } : msg,

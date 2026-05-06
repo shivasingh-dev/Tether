@@ -99,7 +99,7 @@ const useStatusStore = create((set, get) => ({
   },
 
   // View status
-  viewSatus: async (statusId) => {
+  viewStatus: async (statusId) => {
     try {
       set({ loading: true, error: null });
       await axiosInstance.post(`status/${statusId}/view`);
@@ -149,7 +149,7 @@ const useStatusStore = create((set, get) => ({
   },
 
   // helper functions for grouped status
-  getGroupedStatus: async () => {
+  getGroupedStatus: () => {
     const { statuses } = get();
     return statuses.reduce((acc, status) => {
       const statusUserId = status?.user?._id;
@@ -173,15 +173,15 @@ const useStatusStore = create((set, get) => ({
   },
 
   getUserStatuses: (userId) => {
-    const groupedStatus = get().getGroupedStatus()
-    return userId ? groupedStatus[userId] : null
+    const groupedStatus = get().getGroupedStatus();
+    return userId ? groupedStatus[userId] : null;
   },
 
   getOtherStatuses: (userId) => {
-    const groupedStatus = get().getGroupedStatus()
+    const groupedStatus = get().getGroupedStatus();
     return Object.values(groupedStatus).filter(
-      (contact) => contact?._id !== userId
-    )
+      (contact) => contact?.id !== userId
+    );
   },
 
   // clear error
