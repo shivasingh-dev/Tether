@@ -10,7 +10,7 @@ const StatusList = ({contact, onPreview, theme}) => {
   return (
     <motion.div
       onClick={onPreview}
-      className={`mx-4 my-1 flex cursor-pointer items-center rounded-xl p-2.5 transition-all border border-transparent hover:border-blue-800/30 hover:bg-[#06234f]/60 cursor-pointer`}
+      className={`mx-4 my-1 flex items-center rounded-xl p-2.5 transition-all border border-transparent hover:border-blue-800/30 hover:bg-[#06234f]/60 cursor-pointer`}
     >
       {/* Avatar Section */}
       <div className="relative shrink-0">

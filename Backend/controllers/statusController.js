@@ -129,36 +129,35 @@ export const viewStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Status not found" })
     }
 
+    let updateStatus = status;
     if (!status.viewers.includes(userId)) {
-      status.viewers.push(userId)
-      await status.save()
+      status.viewers.push(userId);
+      await status.save();
 
-      const updateStatus = await statusModel.findById(statusId)
+      updateStatus = await statusModel.findById(statusId)
         .populate("user", "fullName profilePicture")
-        .populate("viewers", "fullName profilePicture")
+        .populate("viewers", "fullName profilePicture");
     }
 
     // Emit socket event
     if (req.io && req.socketUserMap) {
-      // broadcast to all connecting user except the creator
-      const statusOwnerSocketId = req.socketUserMap.get(status?.user?._id.toString())
+      const statusOwnerId = status.user.toString();
+      const statusOwnerSocketId = req.socketUserMap.get(statusOwnerId);
+      
       if (statusOwnerSocketId) {
         const viewData = {
           statusId,
           viewerId: userId,
-          totalViewers: updateStatus.viewers.length,
-          viewers: updateStatus.viewers
-        }
+          totalViewers: (updateStatus?.viewers || []).length,
+          viewers: updateStatus?.viewers || []
+        };
 
-        res.io.to(statusOwnerSocketId).emit("status_viewed", viewData)
+        req.io.to(statusOwnerSocketId).emit("status_viewed", viewData);
+      } else {
+        console.log("status owner are not connected");
       }
-      else {
-        console.log("status owner are not connected")
-      }
-    }
-
-    else {
-      console.log("user already viewed the status")
+    } else {
+      console.log("io or socketUserMap missing");
     }
 
     return res.status(200).json({ success: true, message: "Status viewed successfully" })
@@ -180,7 +179,7 @@ export const deleteStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: "Not authorized to delete the status" })
     }
 
-    await statusModel.deleteOne()
+    await status.deleteOne();
 
     // emit socket event
     if (req.io && req.socketUserMap) {
