@@ -9,6 +9,9 @@ import { RxCross2 } from "react-icons/rx";
 import { FaCamera, FaEllipsisH, FaPlus } from "react-icons/fa";
 import formatTimestamp from "@/Utils/data";
 import StatusList from "./StatusList";
+import ImageEditor from "../../components/ImageEditor";
+import useOutsideClick from "../../hooks/useOutsideClick";
+import { toast } from "sonner";
 
 const Status = () => {
   const [previewContact, setPreviewContact] = useState(null);
@@ -80,6 +83,8 @@ const Status = () => {
       setNewStatus("");
       setSelectedFile(null);
       setFilePreview(null);
+      setShowCreateModel(false);
+      toast.success("Status created successfully!");
     } catch (error) {
       console.error("Error in handle create status", error);
     }
@@ -97,7 +102,6 @@ const Status = () => {
     try {
       await deleteStatus(statusId);
       setShowOption(false);
-      handlePreviewClose();
     } catch (error) {
       console.error("Error in handle delete status", error);
     }
@@ -120,7 +124,7 @@ const Status = () => {
     setCurrentStatusIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleStatusPreview = (contact, statusIndex) => {
+  const handleStatusPreview = (contact, statusIndex = 0) => {
     setPreviewContact(contact);
     setCurrentStatusIndex(statusIndex);
 
@@ -164,12 +168,12 @@ const Status = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7 }}
-        className={`flex h-screen flex-col border-r ${theme === "dark" ? "bg-[rgb(12, 19, 24)] border-gray-600 text-white" : "bg-gray-100 text-black"}`}
+        className="flex h-screen flex-col border-r border-blue-900/30 bg-[#020818] text-white"
       >
-        <div
-          className={`flex items-center justify-between shadow-md ${theme === "dark" ? "bg-[rgb(17, 27, 33)] text-white" : "bg-white"} p-4`}
-        >
-          <h2 className="text-2xl font-bold">Status</h2>
+        <div className="flex items-center justify-between px-5 py-3">
+          <h2 className="bg-linear-to-r from-[#60a5fa] via-[#22d3ee] to-[#a78bfa] bg-clip-text text-2xl font-black tracking-tight text-transparent cursor-default">
+            Status
+          </h2>
         </div>
 
         {error && (
@@ -185,22 +189,28 @@ const Status = () => {
         )}
 
         <div className="h-[calc(100vh-64px)] overflow-y-auto">
-          <div
-            className={`flex space-x-4 p-3 shadow-md ${theme === "dark" ? "bg-[rgb(17, 27, 33)]" : "bg-white"} p-4`}
-          >
+          <div className="mx-4 my-2 flex items-center rounded-xl p-3 border border-blue-800/30 bg-[#06234f]/60 shadow-lg">
             <div
-              className="relative cursor-pointer"
+              className="relative cursor-pointer shrink-0"
               onClick={() =>
                 userStatus
                   ? handleStatusPreview(userStatus)
                   : setShowCreateModel(true)
               }
             >
-              <img
-                src={user?.profilePicture}
-                alt="user?.fullName"
-                className="h-12 w-12 rounded-full object-cover"
-              />
+              {user?.profilePicture ? (
+                <img
+                  src={user?.profilePicture}
+                  alt={user?.fullName}
+                  className="h-12 w-12 rounded-full border border-blue-500/20 object-cover"
+                />
+              ) : (
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-[#06234f]">
+                  <span className="text-xl font-bold text-blue-400">
+                    {user?.fullName?.charAt(0).toUpperCase() || "U"}
+                  </span>
+                </div>
+              )}
 
               {userStatus ? (
                 <>
@@ -211,7 +221,7 @@ const Status = () => {
                     {userStatus?.statuses.map((_, index) => {
                       const total = userStatus.statuses.length;
                       const circumference = 2 * Math.PI * 48;
-                      const gap = 6;
+                      const gap = total > 1 ? 6 : 0;
                       const segmentLength =
                         (circumference - gap * total) / total;
                       const offset = index * (segmentLength + gap);
@@ -223,18 +233,18 @@ const Status = () => {
                           cy="50"
                           r="48"
                           fill="none"
-                          stroke="#25D366"
+                          stroke="#2979ff"
                           strokeWidth="4"
                           strokeDasharray={`${segmentLength} ${circumference}`}
                           strokeDashoffset={-offset}
-                          transform="rotate(-90 50 50)"
+                          transform={`rotate(-90 50 50)`}
                         />
                       );
                     })}
                   </svg>
 
                   <button
-                    className="absolute right-0 bottom-0 rounded-full bg-green-500 p-1 text-white"
+                    className="absolute right-0 bottom-0 rounded-full bg-blue-600 p-1 text-white shadow-[0_0_10px_rgba(41,121,255,0.4)] cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowCreateModel(true);
@@ -245,7 +255,7 @@ const Status = () => {
                 </>
               ) : (
                 <button
-                  className="absolute right-0 bottom-0 rounded-full bg-green-500 p-1 text-white"
+                  className="absolute right-0 bottom-0 rounded-full bg-blue-600 p-1 text-white shadow-[0_0_10px_rgba(41,121,255,0.4)] cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowCreateModel(true);
@@ -256,12 +266,10 @@ const Status = () => {
               )}
             </div>
 
-            <div className="flex flex-1 flex-col items-start">
-              <p className="font-semibold">My Status</p>
+            <div className="ml-3 flex flex-1 flex-col items-start">
+              <p className="font-medium text-white">My Status</p>
 
-              <p
-                className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}
-              >
+              <p className="text-[13px] text-blue-300/70">
                 {userStatus
                   ? `${userStatus?.statuses?.length} status${userStatus?.statuses?.length > 1 ? "es" : ""} ${formatTimestamp(userStatus?.statuses?.[userStatus?.statuses?.length - 1]?.timestamp)}`
                   : "Tap to add status"}
@@ -270,23 +278,19 @@ const Status = () => {
 
             {userStatus && (
               <button
-                className="ml-auto"
+                className="ml-auto cursor-pointer"
                 onClick={() => setShowOption(!showOption)}
               >
-                <FaEllipsisH
-                  className={`h-5 w-5${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}
-                />
+                <FaEllipsisH className="h-5 w-5 text-blue-400 hover:text-blue-200 transition-colors" />
               </button>
             )}
           </div>
 
           {/* Options menu */}
           {showOption && userStatus && (
-            <div
-              className={`p-2 shadow-md ${theme === "dark" ? "bg-[rgb(17, 27, 33)]" : "bg-white"} p-4`}
-            >
+            <div className="mx-4 mb-4 rounded-lg bg-[#06234f] p-2 shadow-[0_0_20px_rgba(59,130,246,0.1)] border border-blue-900/30">
               <button
-                className="flex w-full items-center rounded px-2 py-2 text-left text-green-500 hover:bg-gray-100"
+                className="flex w-full items-center rounded-md px-3 py-2 text-left text-blue-400 hover:bg-[#020818] transition-colors"
                 onClick={() => {
                   setShowCreateModel(true);
                   setShowOption(false);
@@ -296,7 +300,7 @@ const Status = () => {
               </button>
 
               <button
-                className="w-full rounded px-2 py-2 text-left text-blue-500 hover:bg-gray-100"
+                className="mt-1 w-full rounded-md px-3 py-2 text-left text-blue-400 hover:bg-[#020818] transition-colors"
                 onClick={() => {
                   handleStatusPreview(userStatus);
                   setShowOption(false);
@@ -315,42 +319,132 @@ const Status = () => {
 
           {/* Recent updates from other users */}
           {!loading && otherStatus?.length > 0 && (
-            <div
-              className={`mt-4 space-y-4 p-4 shadow-md ${theme === "dark" ? "bg-[rgb(17, 27, 33)]" : "bg-white"} p-4`}
-            >
-              <h3
-                className={`font-semibold ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}
-              >
+            <div className="mt-4">
+              <h3 className="px-5 pb-2 text-sm font-semibold text-blue-400">
                 Recent Updates
               </h3>
 
-              {otherStatus?.map((contact, index) => (
-                <React.Fragment key={contact?.id}>
-                  <StatusList contact={contact} onPreview={() => handleStatusPreview(contact)} theme={theme} /> 
-                    {index < otherStatus?.length - 1 && (
-                      <hr className={`${theme === 'dark' ? "border-gray-400" : "border-gray-500"}`} />
-                    )}
-                </React.Fragment>
-              ))}
+              <div className="space-y-1">
+                {otherStatus?.map((contact, index) => (
+                  <React.Fragment key={contact?.id}>
+                    <StatusList
+                      contact={contact}
+                      onPreview={() => handleStatusPreview(contact)}
+                      theme={theme}
+                    />
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Empty State */}
-          {!loading && statuses.length === 0 && (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-              <div className={`text-2xl mb-4 ${theme === 'dark' ? "text-gray-600" : "text-gray-300"}`}>
-                Status update will be displayed here
+          {!loading && otherStatus.length === 0 && (
+            <div className="flex flex-col items-center justify-center p-8 text-center mt-10">
+              <span className="mb-3 text-4xl">📱</span>
+              <div className="text-[14px] text-blue-300/50">
+                Status updates will appear here
               </div>
             </div>
           )}
         </div>
 
         {showCreateModel && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className={`p-6 rounded-lg max-w-md w-full mx-4 ${theme  === 'dark' ? "bg-gray-800" : "bg-white"}`}>
-              <h3 className={`text-lg font-semibold ${theme === 'dark' ? "text-white" : "text-black"}`}>Create Status</h3>
+          <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/60 px-4">
+            <div className="mx-4 w-full max-w-md rounded-2xl bg-linear-to-br from-[#05164a] via-[#050a1f] to-[#0a1f44] p-6 shadow-[0_0_60px_rgba(59,130,246,0.3)] border border-blue-900/50">
+              <h3 className="text-xl font-bold text-white mb-6">
+                Create Status
+              </h3>
+
+              {filePreview && (
+                <div className="mb-4 border-t border-blue-900/30 bg-[#020818] px-4 py-2">
+                  <div className="relative mx-auto w-fit">
+                    {selectedFile?.type.startsWith("video/") ? (
+                      <video
+                        src={filePreview}
+                        controls
+                        className="h-32 w-full rounded object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={filePreview}
+                        className="h-32 w-full rounded object-cover"
+                        alt="preview"
+                      />
+                    )}
+
+                    {/* File info */}
+                    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#06234f]/60 px-3 py-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="text-lg">
+                          {selectedFile?.type.startsWith("video/")
+                            ? "🎥"
+                            : "🖼️"}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs text-blue-200">
+                            {selectedFile?.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            {formatFileSize(selectedFile?.size)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ── Edit button: sirf images ke liye ── */}
+                      {!selectedFile?.type.startsWith("video/") && (
+                        <button
+                          onClick={() => {
+                            setEditorImage(filePreview);
+                            setShowEditor(true);
+                          }}
+                          className="shrink-0 rounded-full border border-blue-500/30 bg-blue-600/20 px-3 py-1 text-[11px] font-semibold text-blue-300 transition-colors hover:bg-blue-600/40 cursor-pointer"
+                        >
+                          ✏️ Edit
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                placeholder="What's on your mind?"
+                className="mb-4 w-full rounded-xl border border-blue-600 bg-[#06234f] p-3 text-white outline-none focus:border-blue-400 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] placeholder:text-blue-300/30"
+                rows={3}
+              />
+
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileChange}
+              className="mb-6 block w-full text-sm text-blue-300/70 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-400 hover:file:bg-blue-600/30"
+            />
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCreateModel(false);
+                  setSelectedFile(null);
+                  setFilePreview(null);
+                  setNewStatus("");
+                }}
+                disabled={loading}
+                className="px-4 py-2 text-blue-300 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+
+               <button
+                onClick={handleCreateStatus}
+                disabled={loading || (!newStatus.trim() && !selectedFile)}
+                className="rounded-xl bg-linear-to-r from-[#2979ff] to-[#7c3aed] px-5 py-2 font-bold text-white transition-all hover:shadow-[0_0_20px_rgba(41,121,255,0.4)] disabled:opacity-50 active:scale-95"
+             > {loading ? "Creating..." : "Create"}
+              </button>
             </div>
           </div>
+           </div>
         )}
       </motion.div>
     </Layout>

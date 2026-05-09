@@ -38,6 +38,7 @@ const LoginPopup = ({ setFormOpen }) => {
         const response = await loginWithEmail(values.email, values.password)
         if (response.success) {
           const userData = response.user
+          localStorage.setItem("auth_token", userData.token)
           setUser(userData)
           toast.success("Login Successfully", { position: "bottom-left" })
             navigate('/')

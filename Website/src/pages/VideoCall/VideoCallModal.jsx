@@ -386,7 +386,7 @@ const VideoCallModal = ({ socket }) => {
     <div
       className={`relative h-full w-full max-w-4xl overflow-hidden rounded-2xl shadow-2xl ${
         theme === "dark"
-          ? "bg-gradient-to-br from-[#020818] via-[#030f2e] to-[#020818]"
+          ? "bg-linear-to-br from-[#020818] via-[#030f2e] to-[#020818]"
           : "bg-white"
       }`}
     >
@@ -485,8 +485,8 @@ const VideoCallModal = ({ socket }) => {
             <div
               className={`flex h-full w-full items-center justify-center ${
                 theme === "dark"
-                  ? "bg-gradient-to-br from-[#020818] via-[#030f2e] to-[#020818]"
-                  : "bg-gradient-to-br from-green-50 to-white"
+                  ? "bg-linear-to-br from-[#020818] via-[#030f2e] to-[#020818]"
+                  : "bg-linear-to-br from-green-50 to-white"
               }`}
             >
               <div className="text-center">

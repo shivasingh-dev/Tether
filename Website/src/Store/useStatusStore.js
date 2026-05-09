@@ -40,7 +40,7 @@ const useStatusStore = create((set, get) => ({
       }));
   },
 
-  cleanupSocket: () => {
+  cleanUpSocket: () => {
     const socket = getSocket();
     if (socket) {
       socket.off("new_status");
@@ -156,7 +156,9 @@ const useStatusStore = create((set, get) => ({
       if (!acc[statusUserId]) {
         acc[statusUserId] = {
           id: statusUserId,
-          name: status?.user?.profilePicture,
+          name: status?.user?.fullName,
+          avatar: status?.user?.profilePicture,
+          phoneNumber: status?.user?.phoneNumber,
           statuses: [],
         };
       }
