@@ -35,7 +35,7 @@ const LoginPopup = ({ setFormOpen }) => {
     onSubmit: async (values) => {
       try {
         setIsLoading(true)
-        const response = await loginWithEmail(values.email, values.password)
+        const response = await loginWithEmail(values.email.trim().toLowerCase(), values.password)
         if (response.success) {
           const userData = response.user
           localStorage.setItem("auth_token", userData.token)
@@ -44,7 +44,8 @@ const LoginPopup = ({ setFormOpen }) => {
             navigate('/')
         }
       } catch (error) {
-        toast.warning(error.response?.data?.message || "Invalid Email Id or password", { position: "top-right" })
+        const errorMsg = error?.message || error?.response?.data?.message || "Something went wrong";
+        toast.warning(errorMsg, { position: "top-right" })
       } finally {
         setIsLoading(false)
       }

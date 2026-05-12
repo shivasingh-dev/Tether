@@ -57,3 +57,12 @@ export const clearChat = async () => {
     throw error?.response?.data || { message: error.message };
   }
 };
+
+export const getSavedContacts = async () => {
+  try {
+    const response = await axiosInstance.get("/update/get-saved-contacts");
+    return response.data;
+  } catch (error) {
+    throw error?.response?.data || { message: error.message };
+  }
+};

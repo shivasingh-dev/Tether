@@ -6,6 +6,7 @@ import { FolderPlus, Search, User } from "lucide-react";
 import { motion } from "motion/react";
 import formatTimestamp from "../../Utils/formatTime.js";
 import { useChatStore } from "../../Store/useChatStore.js";
+import AllSavedContacts from "../../components/AllSavedContacts.jsx";
 
 const ChatList = () => {
   const setSelectedContact = useLayoutStore(
@@ -15,6 +16,7 @@ const ChatList = () => {
   const { theme } = useThemeStore();
   const { user } = useUserStore();
   const [searchTerms, setSearchTerms] = useState("");
+  const [showAllSavedContacts, setShowAllSavedContacts] = useState(false);
 
   const { conversations } = useChatStore();
   const convList = Array.isArray(conversations)
@@ -50,6 +52,10 @@ const ChatList = () => {
       .includes(searchTerms.toLowerCase()),
   );
 
+  if (showAllSavedContacts) {
+    return <AllSavedContacts onBack={() => setShowAllSavedContacts(false)} />;
+  }
+
   return (
     <div className={`h-screen w-full border-r border-blue-900/30 bg-[#020818]`}>
       {/* Header */}
@@ -58,7 +64,10 @@ const ChatList = () => {
           Tether
         </h2>
         {/* new chat icon */}
-        <button className="relative flex cursor-pointer items-center justify-center rounded-full p-2 text-blue-400 transition-all duration-300 hover:border-blue-400 hover:bg-blue-800 hover:text-blue-200 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] active:bg-blue-500/30">
+        <button 
+          onClick={() => setShowAllSavedContacts(true)}
+          className="relative flex cursor-pointer items-center justify-center rounded-full p-2 text-blue-400 transition-all duration-300 hover:border-blue-400 hover:bg-blue-800 hover:text-blue-200 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] active:bg-blue-500/30"
+        >
           <FolderPlus size={22} />
         </button>
       </div>

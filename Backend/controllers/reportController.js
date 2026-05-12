@@ -23,7 +23,7 @@ export const reportUser = async (req, res) => {
     await userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { reportedUsers: userIdToReport } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     return res.status(200).json({
@@ -55,7 +55,7 @@ export const unreportUser = async (req, res) => {
     await userModel.findByIdAndUpdate(
       userId,
       { $pull: { reportedUsers: userIdToUnreport } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     return res.status(200).json({

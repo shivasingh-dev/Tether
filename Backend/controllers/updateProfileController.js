@@ -128,6 +128,32 @@ export const getAllUserWithContacts = async (req, res) => {
   }
 };
 
+// this function is returning all saved contacts for the user
+export const getSavedContacts = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await userModel.findById(userId).populate({
+      path: 'savedContacts',
+      select: '_id fullName phoneNumber profilePicture about isOnline lastSeen'
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    console.log(`Fetching saved contacts for user: ${user.fullName}, count: ${user.savedContacts?.length}`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Saved contacts fetched successfully for ${user.fullName}`,
+      data: user.savedContacts || []
+    });
+  } catch (error) {
+    console.error("Error in getSavedContacts", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 // this function is returning recent chats for users 
 
 export const getRecentChats = async (req, res) => {

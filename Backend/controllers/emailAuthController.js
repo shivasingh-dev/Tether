@@ -115,11 +115,11 @@ export const emailLogin = async (req, res) => {
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email: email.trim().toLowerCase() });
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Cridentials, No User found",
+        message: "Invalid Credentials, No User found",
       });
     }
 

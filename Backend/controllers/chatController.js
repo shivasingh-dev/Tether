@@ -239,7 +239,7 @@ export const getMessages = async (req, res) => {
       {
         $set: { [`unreadCount.${userId}`]: 0 },
       },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!conversation) {
       return res

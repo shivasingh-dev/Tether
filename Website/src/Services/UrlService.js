@@ -5,7 +5,9 @@ import { getSocket } from './ChatServices';
 // Production url
 // const apiUrl = `https://tether-backend-five.vercel.app/`
 
-const apiUrl = `http://localhost:8000/` // Development url
+
+// Development URL 
+const apiUrl = `http://localhost:8000/` 
 
 
 const getToken = () => {

@@ -26,7 +26,7 @@ export const blockUser = async (req, res) => {
     const currentUser = await userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { blockedUsers: userIdToBlock } }, // $addToSet prevents duplicates
-      { new: true }
+      { returnDocument: 'after' }
     ).select('-password');
 
     // Emit socket event for real-time update
@@ -71,7 +71,7 @@ export const unblockUser = async (req, res) => {
     const currentUser = await userModel.findByIdAndUpdate(
       userId,
       { $pull: { blockedUsers: userIdToUnblock } },
-      { new: true }
+      { returnDocument: 'after' }
     ).select('-password');
 
     // Emit socket event
