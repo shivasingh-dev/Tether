@@ -1,6 +1,5 @@
 import userModel from "../models/user.js";
 import {otpGenerator} from "../utils/otpGenerater.js";
-import {sendPhoneOtpfun} from "../utils/phoneNumberOtp.js";
 
 //  Phone number otp send function
 
@@ -13,6 +12,10 @@ export const sendPhoneOtp = async (req, res) => {
         success: false,
         message: "All fields are required",
       });
+    }
+
+    if (phoneNumber.length !== 10 || isNaN(phoneNumber)) {
+      return res.status(400).json({success: false, message: "Please enter a valid 10 digit Number"})
     }
 
     const existUser = await userModel.findOne({ phoneNumber });
@@ -29,16 +32,14 @@ export const sendPhoneOtp = async (req, res) => {
         });
       }
 
-      // for unverified user, send new otp
+      // for unverified user, just update name
       existUser.fullName = fullName;
-      existUser.phoneOtp = verificationCode;
-      existUser.createdAt = Date.now();
+      existUser.phoneOtp = null; // No OTP needed
       await existUser.save();
-      await sendPhoneOtpfun(phoneNumber, verificationCode);
 
       return res.status(200).json({
         success: true,
-        message: "New OTP sent to your number",
+        message: "Phone number registered successfully",
       });
     }
 
@@ -46,14 +47,14 @@ export const sendPhoneOtp = async (req, res) => {
     const user = new userModel({
       fullName,
       phoneNumber,
-      phoneOtp: verificationCode,
+      phoneOtp: null,
+      isVerified: false,
     });
     await user.save();
-    await sendPhoneOtpfun(user.phoneNumber, verificationCode);
 
     return res.status(200).json({
       success: true,
-      message: "OTP sent successfully",
+      message: "Phone number registered successfully",
       data: user,
     });
   } catch (error) {
