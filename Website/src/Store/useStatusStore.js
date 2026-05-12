@@ -102,7 +102,7 @@ const useStatusStore = create((set, get) => ({
   viewStatus: async (statusId) => {
     try {
       set({ loading: true, error: null });
-      await axiosInstance.post(`status/${statusId}/view`);
+      await axiosInstance.put(`/status/${statusId}/view`);
       set((state) => ({
         statuses: state?.statuses?.map((status) =>
           status?._id === statusId ? { ...status } : status,

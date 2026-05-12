@@ -3,11 +3,11 @@ import useUserStore from '../Store/useUserStore';
 import { getSocket } from './ChatServices';
 
 // Production url
-// const apiUrl = `https://tether-backend-five.vercel.app/`
+const apiUrl = `https://tether-backend-five.vercel.app/`
 
 
 // Development URL 
-const apiUrl = `http://localhost:8000/` 
+// const apiUrl = `http://localhost:8000/` 
 
 
 const getToken = () => {
@@ -22,9 +22,11 @@ const axiosInstance = axios.create({
 })
 
 axiosInstance.interceptors.request.use((config) => {
-  const user = useUserStore.getState().user || getToken();
-  if (user?.token) {
-    config.headers.Authorization = `Bearer ${user.token}`;
+  const storeUser = useUserStore.getState().user;
+  const token = storeUser?.token || localStorage.getItem("auth_token");
+  
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   
   const socket = getSocket();
