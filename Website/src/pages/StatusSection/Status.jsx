@@ -66,8 +66,8 @@ const Status = () => {
       setSelectedFile(file);
       setShowEditor(true);
     } else {
-      setSelectedFile(file);
-      setFilePreview(URL.createObjectURL(file));
+      toast.error("Only photos can be selected. Videos are not allowed.");
+      e.target.value = "";
     }
   };
 
@@ -358,28 +358,16 @@ const Status = () => {
               {filePreview && (
                 <div className="mb-4 border-t border-blue-900/30 bg-[#020818] px-4 py-2">
                   <div className="relative mx-auto w-fit">
-                    {selectedFile?.type.startsWith("video/") ? (
-                      <video
-                        src={filePreview}
-                        controls
-                        className="h-32 w-full rounded object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={filePreview}
-                        className="h-32 w-full rounded object-cover"
-                        alt="preview"
-                      />
-                    )}
+                    <img
+                      src={filePreview}
+                      className="h-32 w-full rounded object-cover"
+                      alt="preview"
+                    />
 
                     {/* File info */}
                     <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#06234f]/60 px-3 py-2">
                       <div className="flex min-w-0 items-center gap-2">
-                        <span className="text-lg">
-                          {selectedFile?.type.startsWith("video/")
-                            ? "🎥"
-                            : "🖼️"}
-                        </span>
+                        <span className="text-lg">🖼️</span>
                         <div className="min-w-0">
                           <p className="truncate text-xs text-blue-200">
                             {selectedFile?.name}
@@ -390,9 +378,8 @@ const Status = () => {
                         </div>
                       </div>
 
-                      {/* ── Edit button: sirf images ke liye ── */}
-                      {!selectedFile?.type.startsWith("video/") && (
-                        <button
+                      {/* ── Edit button ── */}
+                      <button
                           onClick={() => {
                             setEditorImage(filePreview);
                             setShowEditor(true);
@@ -401,7 +388,6 @@ const Status = () => {
                         >
                           ✏️ Edit
                         </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -417,7 +403,7 @@ const Status = () => {
 
             <input
               type="file"
-              accept="image/*,video/*"
+              accept="image/*"
               onChange={handleFileChange}
               className="mb-6 block w-full text-sm text-blue-300/70 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-400 hover:file:bg-blue-600/30"
             />

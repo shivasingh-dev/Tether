@@ -30,4 +30,14 @@ export const uploadFileToCloudinary = (file) => {
   });
 };
 
+export const deleteFileFromCloudinary = async (publicId, resourceType = 'image') => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    return result;
+  } catch (error) {
+    console.error("Cloudinary deletion error:", error);
+    throw error;
+  }
+};
+
 export const multerMiddleware = multer({ storage: multer.memoryStorage() }).single('media');

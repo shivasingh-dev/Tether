@@ -1,7 +1,7 @@
 import { conversationModel } from "../models/conversation.js";
 import { statusModel } from "../models/status.js";
 import userModel from "../models/user.js";
-import { uploadFileToCloudinary } from "../config/cloudinaryConfig.js";
+import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../config/cloudinaryConfig.js";
 
 export const createStatus = async (req, res) => {
   try {
@@ -23,14 +23,12 @@ export const createStatus = async (req, res) => {
       }
       mediaUrl = uploadFile?.secure_url;
 
-      if (file.mimetype.startswith("image")) {
+      if (file.mimetype.startsWith("image")) {
         finalContentType = "image";
-      } else if (file.mimetype.startswith("video")) {
-        finalContentType = "video";
       } else {
         return res
           .status(400)
-          .json({ sucess: false, message: "Unsupported Media or file type" });
+          .json({ success: false, message: "Only photos can be selected. Videos are not allowed." });
       }
     } else if (content?.trim()) {
       finalContentType = "text";
@@ -46,6 +44,7 @@ export const createStatus = async (req, res) => {
     const status = new statusModel({
       user: userId,
       content: mediaUrl || content,
+      contentPublicId: file ? uploadFile?.public_id : null,
       contentType: finalContentType,
       expiresAt,
     });
@@ -113,6 +112,9 @@ export const getStatus = async (req, res) => {
     }).populate("user", "fullName profilePicture phoneNumber")
       .populate("viewers", "fullName profilePicture").sort({ createdAt: -1 })
 
+    // Background cleanup of expired statuses
+    cleanupExpiredStatuses();
+
     return res.status(200).json({ success: true, message: "Status retrived successfully", data: statuses })
   } catch (error) {
     console.error("Error in getStatus", error)
@@ -179,6 +181,10 @@ export const deleteStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: "Not authorized to delete the status" })
     }
 
+    if (status.contentPublicId) {
+      await deleteFileFromCloudinary(status.contentPublicId, status.contentType);
+    }
+
     await status.deleteOne();
 
     // emit socket event
@@ -197,3 +203,21 @@ export const deleteStatus = async (req, res) => {
     return res.status(500).json({ success: true, message: "Internal Server Error" })
   }
 }
+export const cleanupExpiredStatuses = async () => {
+  try {
+    const expiredStatuses = await statusModel.find({ expiresAt: { $lte: new Date() } });
+    
+    for (const status of expiredStatuses) {
+      if (status.contentPublicId) {
+        try {
+          await deleteFileFromCloudinary(status.contentPublicId, status.contentType);
+        } catch (err) {
+          console.error(`Failed to delete Cloudinary asset for status ${status._id}:`, err);
+        }
+      }
+      await status.deleteOne();
+    }
+  } catch (error) {
+    console.error("Error in cleanupExpiredStatuses:", error);
+  }
+};
