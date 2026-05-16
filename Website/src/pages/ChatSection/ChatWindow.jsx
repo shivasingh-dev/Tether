@@ -18,7 +18,7 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import MessageBubble from "./MessageBubble";
-import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical, CheckCircle, User } from "lucide-react";
+import { SmilePlus, Trash2, UserX, AlertTriangle, MoreVertical, CheckCircle, User, MessageSquareDashed } from "lucide-react";
 import { IoMdSend } from "react-icons/io";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSocket } from "../../Services/ChatServices";
@@ -244,6 +244,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
       setMessage("");
       setSelectedFile(null);
       setFilePreview(null);
+      setEditorImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Frontend Error:", error);
     }
@@ -437,30 +439,48 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
 
         {/* ── Messages Area ── */}
         <div
-          className="sidebar-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-3"
+          className="sidebar-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-3 flex flex-col"
           style={{ background: "radial-gradient(ellipse at top, #040f2e 0%, #020818 70%)" }}
         >
-          {Object.entries(groupedMessages).map(([date, msgs]) => (
-            <React.Fragment key={date}>
-              {renderDateSeparator(new Date(date))}
-              {msgs
-                .filter(msg => {
-                  const msgConvId     = msg.conversation?._id?.toString() || msg.conversation?.toString();
-                  const currentConvId = selectedContact?.conversationId?.toString() || selectedContact?.conversation?._id?.toString();
-                  return msgConvId === currentConvId;
-                })
-                .map(msg => (
-                  <MessageBubble
-                    key={msg?._id || msg?.tempId}
-                    message={msg}
-                    currentUser={user}
-                    onReact={handleReaction}
-                    deleteMessage={deleteMessage}
-                  />
-                ))}
-            </React.Fragment>
-          ))}
-          <div ref={messageEndRef} />
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500/20 border-t-blue-500" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center text-center">
+              <div className="rounded-full bg-blue-500/5 p-8 mb-4">
+                <MessageSquareDashed size={60} className="text-blue-500/20" />
+              </div>
+              <h3 className="text-xl font-bold text-blue-100">No messages yet</h3>
+              <p className="mt-2 text-sm text-blue-300/40">
+                Send a message to start the conversation with {displayName}
+              </p>
+            </div>
+          ) : (
+            <>
+              {Object.entries(groupedMessages).map(([date, msgs]) => (
+                <React.Fragment key={date}>
+                  {renderDateSeparator(new Date(date))}
+                  {msgs
+                    .filter(msg => {
+                      const msgConvId     = msg.conversation?._id?.toString() || msg.conversation?.toString();
+                      const currentConvId = selectedContact?.conversationId?.toString() || selectedContact?.conversation?._id?.toString();
+                      return msgConvId === currentConvId;
+                    })
+                    .map(msg => (
+                      <MessageBubble
+                        key={msg?._id || msg?.tempId}
+                        message={msg}
+                        currentUser={user}
+                        onReact={handleReaction}
+                        deleteMessage={deleteMessage}
+                      />
+                    ))}
+                </React.Fragment>
+              ))}
+              <div ref={messageEndRef} />
+            </>
+          )}
         </div>
 
         {/* ── File Preview (video ya edited image) ── */}

@@ -47,28 +47,8 @@ const Status = () => {
   const otherStatus = getOtherStatuses(user?._id);
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      toast.error(validation.error);
-      e.target.value = "";
-      return;
-    }
-
-    setShowFileMenu(false);
-    e.target.value = ""; // Same file dobara select kar sake
-
-    if (file.type.startsWith("image/")) {
-      const objectURL = URL.createObjectURL(file);
-      setEditorImage(objectURL);
-      setSelectedFile(file);
-      setShowEditor(true);
-    } else {
-      toast.error("Only photos can be selected. Videos are not allowed.");
-      e.target.value = "";
-    }
+    toast.info("Media status updates will be available in upcoming versions!");
+    e.target.value = "";
   };
 
   const handleCreateStatus = async () => {
