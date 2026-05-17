@@ -53,8 +53,8 @@ export const createStatus = async (req, res) => {
 
     const populateStatus = await statusModel
       .findById(status?._id)
-      .populate("user", "fullName profilePicture")
-      .populate("viewers", "fullName profilePicture");
+      .populate("user", "fullName profilePicture phoneNumber")
+      .populate("viewers", "fullName profilePicture phoneNumber");
 
 
     // emit socket event
@@ -110,7 +110,7 @@ export const getStatus = async (req, res) => {
       user: { $in: mutualContactIds },
       expiresAt: { $gt: new Date() }
     }).populate("user", "fullName profilePicture phoneNumber")
-      .populate("viewers", "fullName profilePicture").sort({ createdAt: -1 })
+      .populate("viewers", "fullName profilePicture phoneNumber").sort({ createdAt: -1 })
 
     // Background cleanup of expired statuses
     cleanupExpiredStatuses();
@@ -137,8 +137,8 @@ export const viewStatus = async (req, res) => {
       await status.save();
 
       updateStatus = await statusModel.findById(statusId)
-        .populate("user", "fullName profilePicture")
-        .populate("viewers", "fullName profilePicture");
+        .populate("user", "fullName profilePicture phoneNumber")
+        .populate("viewers", "fullName profilePicture phoneNumber");
     }
 
     // Emit socket event
