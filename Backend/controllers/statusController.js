@@ -161,7 +161,6 @@ export const viewStatus = async (req, res) => {
     } else {
       console.log("io or socketUserMap missing");
     }
-
     return res.status(200).json({ success: true, message: "Status viewed successfully" })
   } catch (error) {
     console.error("Error in viewStatus", error)
