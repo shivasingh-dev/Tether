@@ -373,6 +373,15 @@ export const initializeSocket = (server) => {
         callId
       });
     });
+
+    // 8. Toggle Media (Video/Audio)
+    socket.on("toggle_media", ({ receiverId, callId, isVideoEnabled, isAudioEnabled }) => {
+      emitToAppOnly(io, receiverId, "media_toggled", {
+        callId,
+        isVideoEnabled,
+        isAudioEnabled
+      });
+    });
   });
 
   // attaching the online user map to the socket server for external use
