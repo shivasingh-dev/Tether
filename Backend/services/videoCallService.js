@@ -90,7 +90,7 @@ const handleVideoCallEvent = (socket, io, onlineUsers) => {
     const recieverSocketId = onlineUsers.get(receiverId)
 
     if (recieverSocketId) {
-      io.to(recieverSocketId).emit("webrtc_answer", {
+      io.to(recieverSocketId).emit("webrtc_ice_candidate", {
         candidate,
         senderId: socket.userId,
         callId
