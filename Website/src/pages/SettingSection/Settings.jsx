@@ -14,7 +14,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { toast } from "sonner"
+import { toast, Toaster } from "sonner"
 
 const Settings = () => {
   const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
@@ -59,6 +59,10 @@ const Settings = () => {
   const filteredMenuItems = menuItems.filter((item) =>
     item.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const notfiyLightTheme = () => {
+    toast.message("Light theme will be available in upcoming updates", {position: "bottom-left"})
+  }
 
   // Check if theme matches search
   const showTheme =
@@ -164,7 +168,7 @@ const Settings = () => {
                 {/* Theme button - conditionally render */}
                 {showTheme && (
                   <button
-                    onClick={toggleThemeDialog}
+                    onClick={notfiyLightTheme}
                     className={`flex w-full items-center gap-4 cursor-pointer rounded-lg px-3 py-2 transition-all ${
                       theme === "dark"
                         ? "text-white hover:bg-[#06234f]/60"
