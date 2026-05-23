@@ -3,9 +3,6 @@ import useUserStore from "../Store/useUserStore";
 import { API_BASE_URL } from "./UrlService";
 
 let socket = null;
-
-const apiUrl = API_BASE_URL;
-
 export const initializeSocket = () => {
   // Agar socket connected hai ya abhi connect ho raha hai → reuse karo
   if (socket && (socket.connected || socket.active)) return socket;
@@ -17,9 +14,7 @@ export const initializeSocket = () => {
     socket = null;
   }
 
-  const BACKEND_URL = apiUrl;
-
-  socket = io(BACKEND_URL, {
+  socket = io(API_BASE_URL, {
     withCredentials: true,
     transports: ["websocket"],
     reconnectionAttempts: 5,
