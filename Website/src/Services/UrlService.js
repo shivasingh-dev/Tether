@@ -3,7 +3,9 @@ import useUserStore from '../Store/useUserStore';
 import { getSocket } from './ChatServices';
 
 // Production url
-const apiUrl = `https://tether-production-8518.up.railway.app`
+export const API_BASE_URL = `https://tether-production-8518.up.railway.app`
+
+const apiUrl = API_BASE_URL;
 
 
 // Development URL 

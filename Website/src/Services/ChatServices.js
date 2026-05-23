@@ -1,9 +1,10 @@
 import { io } from "socket.io-client";
 import useUserStore from "../Store/useUserStore";
+import { API_BASE_URL } from "./UrlService";
 
 let socket = null;
 
-const apiUrl = `https://tether-production-8bf7.up.railway.app`;
+const apiUrl = API_BASE_URL;
 
 export const initializeSocket = () => {
   // Agar socket connected hai ya abhi connect ho raha hai → reuse karo
