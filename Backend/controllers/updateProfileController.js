@@ -199,7 +199,7 @@ export const getRecentChats = async (req, res) => {
 
         const otherUser = await userModel
           .findById(otherUserId)
-          .select("fullName profilePicture lastSeen isOnline phoneNumber")
+          .select("fullName profilePicture lastSeen isOnline phoneNumber about")
           .lean();
 
         // Per-user unread count Map se nikalo

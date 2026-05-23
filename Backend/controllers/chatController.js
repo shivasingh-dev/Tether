@@ -127,7 +127,7 @@ export const sendMessagge = async (req, res) => {
         path: "conversation",
         populate: {
           path: "participants",
-          select: "fullName profilePicture phoneNumber isOnline lastSeen"
+          select: "fullName profilePicture phoneNumber isOnline lastSeen about"
         }
       });
 
@@ -187,7 +187,7 @@ export const getConversation = async (req, res) => {
         participants: userId,
         deletedBy: { $ne: userId } // Do not fetch conversations deleted by this user
       })
-      .populate("participants", "fullName profilePicture isOnline lastSeen phoneNumber")
+      .populate("participants", "fullName profilePicture isOnline lastSeen phoneNumber about")
       .populate({
         path: "lastMessage",
         populate: {
