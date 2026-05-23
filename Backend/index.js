@@ -33,7 +33,7 @@ const corsOption = {
 };
 
 // Database
-connectDB();
+await connectDB();
 
 // Start Background Tasks
 startCleanupTask();
@@ -49,7 +49,7 @@ app.use(cookieParser());
 // }));
 app.use(cors(corsOption))  // for testing in development
 
-
+  
 
 // create server
 

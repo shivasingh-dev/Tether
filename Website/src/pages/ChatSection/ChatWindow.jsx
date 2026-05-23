@@ -78,6 +78,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   const [isActionOpen, setIsActionOpen] = useState(false)
   const [confirmModal, setConfirmModal] = useState({ open: false, type: null });
   const [isClearing, setIsClearing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const typingTimeoutRef = useRef(null);
   const messageEndRef    = useRef(null);
@@ -225,29 +226,40 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
   // ── Send Message ──
   const handleSendMessage = async () => {
     if (!selectedContact || !user?._id) return;
-    if (!message.trim() && !selectedFile) return;
+    const messageToSend = message.trim();
+    const fileToSend = selectedFile;
+    if (!messageToSend && !fileToSend) return;
+    if (isSending) return;
+    setIsSending(true);
+
+    // Clear input, file, and editor immediately
+    setMessage("");
+    setSelectedFile(null);
+    setFilePreview(null);
+    setEditorImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
 
     try {
       const formData   = new FormData();
       const receiverId = selectedContact?.user?._id || selectedContact?._id;
-      if (!receiverId || receiverId === "undefined") return;
+      if (!receiverId || receiverId === "undefined") {
+        setIsSending(false);
+        return;
+      }
 
       formData.append("senderId", user?._id);
       formData.append("receiverId", receiverId);
 
       const convId = selectedContact?.conversationId || selectedContact?.conversation?._id;
       if (convId) formData.append("conversationId", convId);
-      if (message.trim()) formData.append("content", message.trim());
-      if (selectedFile)   formData.append("media", selectedFile);
+      if (messageToSend) formData.append("content", messageToSend);
+      if (fileToSend)   formData.append("media", fileToSend);
 
       await sendMessage(formData);
-      setMessage("");
-      setSelectedFile(null);
-      setFilePreview(null);
-      setEditorImage(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Frontend Error:", error);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -556,7 +568,7 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
         )}
 
         {/* ── Bottom Bar ── */}
-        <div className={`relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)] ${!blockStatus.canMessage ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`relative mx-auto mb-3 flex w-[95%] items-center rounded-full border border-blue-900/20 bg-[#0a1a3a] px-4 py-0.5 shadow-none transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-[0_0_20px_rgba(59,130,246,0.4)] focus-within:ring-1 focus-within:ring-blue-500 hover:-translate-y-0.5 hover:shadow-[0_5px_25px_rgba(37,99,235,0.4)] ${!blockStatus.canMessage || isSending ? 'opacity-50 pointer-events-none' : ''}`}>
 
           {/* Attachment button */}
           <div ref={fileMenuRef} className="relative shrink-0">
@@ -569,7 +581,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
             />
             <button
               onClick={() => setShowFileMenu(!showFileMenu)}
-              className="cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300"
+              disabled={isSending}
+              className={`cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300 ${isSending ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <FaPaperclip size={19} />
             </button>
@@ -601,7 +614,8 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
           {/* Emoji button */}
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="shrink-0 cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300"
+            disabled={isSending}
+            className={`shrink-0 cursor-pointer rounded-full p-2 text-blue-400/70 transition-colors hover:bg-blue-900/30 hover:text-blue-300 ${isSending ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <SmilePlus size={19} />
           </button>
@@ -625,31 +639,38 @@ const ChatWindow = ({ selectedContact, setSelectedContact }) => {
             onChange={e => setMessage(e.target.value)}
             onKeyDown={e => {
               if (e.key === "Enter") {
+                if (isSending) return;
                 if (!message.trim() && !selectedFile) { toast.warn("Khali message send nahi ho sakta!"); return; }
                 handleSendMessage();
               }
             }}
-            placeholder={blockStatus.isBlockedByMe ? "Unblock to send a message" : (blockStatus.isBlockedByThem ? "You are blocked" : "Type a message")}
-            disabled={!blockStatus.canMessage}
+            placeholder={isSending ? "Sending..." : (blockStatus.isBlockedByMe ? "Unblock to send a message" : (blockStatus.isBlockedByThem ? "You are blocked" : "Type a message"))}
+            disabled={!blockStatus.canMessage || isSending}
             className="min-w-0 flex-1 rounded-full bg-transparent px-2 py-2.5 text-[14px] text-white transition-all outline-none placeholder:text-blue-400 sm:px-4 disabled:cursor-not-allowed"
           />
 
           {/* Send button */}
           <button
             onClick={() => {
+              if (isSending) return;
               if (!message.trim() && !selectedFile) {
                 toast.warn("👀 Blank messages? That's not how this works!");
                 return;
               }
               handleSendMessage();
             }}
-            className={`shrink-0 rounded-full p-2 transition-all ${
-              !message.trim() && !selectedFile
-                ? "bg-gray-600/50 opacity-50"
+            disabled={isSending || (!message.trim() && !selectedFile)}
+            className={`shrink-0 rounded-full p-2 transition-all flex items-center justify-center ${
+              isSending || (!message.trim() && !selectedFile)
+                ? "bg-gray-600/50 opacity-50 cursor-not-allowed"
                 : "cursor-pointer bg-blue-600 hover:bg-blue-500"
             }`}
           >
-            <IoMdSend size={17} className="text-white" />
+            {isSending ? (
+              <div className="h-4.5 w-4.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <IoMdSend size={17} className="text-white" />
+            )}
           </button>
         </div>
       </div>
