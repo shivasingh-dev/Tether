@@ -21,7 +21,7 @@ export const initializeSocket = () => {
 
   socket = io(BACKEND_URL, {
     withCredentials: true,
-    transports: ["websocket", "polling"],
+    transports: ["websocket"],
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
   });

@@ -70,9 +70,10 @@ export const createStatus = async (req, res) => {
       
       const mutualContactIds = mutualContacts.map(c => c._id.toString());
 
-      for (const [connectedUserId, socketId] of req.socketUserMap) {
-        if (connectedUserId !== userId && mutualContactIds.includes(connectedUserId)) {
-          req.io.to(socketId).emit("new_status", populateStatus)
+      for (const [connectedUserId, socketIds] of req.socketUserMap) {
+        if (connectedUserId !== userId.toString() && mutualContactIds.includes(connectedUserId)) {
+          // socketIds is a Set — iterate over each socket
+          socketIds.forEach(sid => req.io.to(sid).emit("new_status", populateStatus));
         }
       }
     }
@@ -144,17 +145,17 @@ export const viewStatus = async (req, res) => {
     // Emit socket event
     if (req.io && req.socketUserMap) {
       const statusOwnerId = status.user.toString();
-      const statusOwnerSocketId = req.socketUserMap.get(statusOwnerId);
+      const statusOwnerSockets = req.socketUserMap.get(statusOwnerId); // Returns a Set
       
-      if (statusOwnerSocketId) {
+      if (statusOwnerSockets && statusOwnerSockets.size > 0) {
         const viewData = {
           statusId,
           viewerId: userId,
           totalViewers: (updateStatus?.viewers || []).length,
           viewers: updateStatus?.viewers || []
         };
-
-        req.io.to(statusOwnerSocketId).emit("status_viewed", viewData);
+        // Iterate over the Set of socketIds
+        statusOwnerSockets.forEach(sid => req.io.to(sid).emit("status_viewed", viewData));
       } else {
         console.log("status owner are not connected");
       }
@@ -188,9 +189,10 @@ export const deleteStatus = async (req, res) => {
 
     // emit socket event
     if (req.io && req.socketUserMap) {
-      for (const [connectedUserId, socketId] of req.socketUserMap) {
-        if (connectedUserId !== userId) {
-          req.io.to(socketId).emit("status_deleted", statusId)
+      for (const [connectedUserId, socketIds] of req.socketUserMap) {
+        if (connectedUserId !== userId.toString()) {
+          // socketIds is a Set — iterate over each socket
+          socketIds.forEach(sid => req.io.to(sid).emit("status_deleted", statusId));
         }
       }
     }
