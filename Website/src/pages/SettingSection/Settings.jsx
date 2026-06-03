@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import useThemeStore from "../../Store/useThemeStore";
 import { logOutUser } from "../../Services/UserService";
 import useUserStore from "../../Store/useUserStore";
-// import { toast } from "react-toastify";
 import Layout from "../../components/Layout";
 import {
   FaComment,
@@ -14,7 +13,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { toast, Toaster } from "sonner"
+import { toast, Toaster } from "sonner";
 
 const Settings = () => {
   const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
@@ -37,10 +36,10 @@ const Settings = () => {
       setShowLogoutModal(false);
       await logOutUser();
       clearUser();
-      toast.success("Log out successfully", {position: "bottom-left"});
+      toast.success("Log out successfully", { position: "bottom-left" });
     } catch (error) {
       console.error("Error in logOut", error);
-      toast.error("Failed to logout. Please try again", {position: "top-right"});
+      toast.error("Failed to logout. Please try again", { position: "top-right" });
     }
   };
 
@@ -52,7 +51,7 @@ const Settings = () => {
   const menuItems = [
     { icon: FaUser, label: "Account", href: "/user-profile" },
     { icon: FaComment, label: "Chats", href: "/" },
-    { icon: FaQuestionCircle, label: "Help", href: "/help" },
+    { icon: FaQuestionCircle, label: "Help", href: "https://tether-policy-page.vercel.app/" },
   ];
 
   // Filter menu items based on search
@@ -61,8 +60,10 @@ const Settings = () => {
   );
 
   const notfiyLightTheme = () => {
-    toast.message("Light theme will be available in upcoming updates", {position: "bottom-left"})
-  }
+    toast.message("Light theme will be available in upcoming updates", {
+      position: "bottom-left",
+    });
+  };
 
   // Check if theme matches search
   const showTheme =
@@ -141,29 +142,56 @@ const Settings = () => {
             {/* Menu items */}
             <div className="h-[calc(100vh-260px)] overflow-y-auto">
               <div className="space-y-1">
-                {/* Filtered menu items */}
-                {filteredMenuItems.map((item) => (
-                  <Link
-                    to={item.href}
-                    key={item.label}
-                    className={`flex w-full items-center gap-4 rounded-lg px-3 py-2 transition-all ${
-                      theme === "dark"
-                        ? "text-white hover:bg-[#06234f]/60"
-                        : "text-black hover:bg-gray-100"
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5 shrink-0 text-blue-400" />
-                    <div
-                      className={`w-full border-b py-3 text-sm ${
+                {/* Filtered menu items with external link support */}
+                {filteredMenuItems.map((item) => {
+                  const isExternal = item.href.startsWith("http");
+
+                  return isExternal ? (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex w-full items-center gap-4 rounded-lg px-3 py-2 transition-all ${
                         theme === "dark"
-                          ? "border-blue-900/30"
-                          : "border-gray-200"
+                          ? "text-white hover:bg-[#06234f]/60"
+                          : "text-black hover:bg-gray-100"
                       }`}
                     >
-                      {item.label}
-                    </div>
-                  </Link>
-                ))}
+                      <item.icon className="h-5 w-5 shrink-0 text-blue-400" />
+                      <div
+                        className={`w-full border-b py-3 text-sm ${
+                          theme === "dark"
+                            ? "border-blue-900/30"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
+                    </a>
+                  ) : (
+                    <Link
+                      to={item.href}
+                      key={item.label}
+                      className={`flex w-full items-center gap-4 rounded-lg px-3 py-2 transition-all ${
+                        theme === "dark"
+                          ? "text-white hover:bg-[#06234f]/60"
+                          : "text-black hover:bg-gray-100"
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0 text-blue-400" />
+                      <div
+                        className={`w-full border-b py-3 text-sm ${
+                          theme === "dark"
+                            ? "border-blue-900/30"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
+                    </Link>
+                  );
+                })}
 
                 {/* Theme button - conditionally render */}
                 {showTheme && (
